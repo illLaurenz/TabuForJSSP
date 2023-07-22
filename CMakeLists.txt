@@ -23,7 +23,7 @@ target_link_libraries(test PRIVATE)
 #set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 #set(PYTHON_EXECUTABLE /home/laurenz/anaconda3/envs/jssp/bin/python)
 
-add_subdirectory(pybind11)
+add_subdirectory(extern/pybind11)
 pybind11_add_module(metaheuristic main.cpp jssp.cpp jssp.h ts.cpp ts.h mem.cpp mem.h)
 
 target_compile_definitions(metaheuristic PRIVATE)

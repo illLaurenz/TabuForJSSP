@@ -31,7 +31,7 @@ void memTest() {
 }
 
 void tabuTest() {
-    string instance_name = "../../../../data/instances/abz_instances/abz5.txt";
+    string instance_name = "../instances/abz_instances/abz5.txt";
 
     JSSPInstance instance = JSSPInstance(instance_name);
     auto ts = TabuSearch(instance);
@@ -54,7 +54,7 @@ void tabuTest() {
 int main() {
     auto t_start = std::chrono::system_clock::now();
     for (int i = 0; i < 1; i++)
-        memTest();
+        tabuTest();
 
     std::chrono::duration<double> elapsed_seconds = (std::chrono::system_clock::now() - t_start);
     cout << elapsed_seconds.count();

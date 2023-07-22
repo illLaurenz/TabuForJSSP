@@ -61,6 +61,9 @@ private:
     // initialized on starting search
     Solution currentSolution;
     Solution currentBestSolution;
+    int new_makespan = 0;
+    vector<vector<std::shared_ptr<Node>>> disjunctive_graph;
+    vector<vector<std::shared_ptr<Node>>> new_disjunctive_graph;
     vector<TabuListItem> tabuList;
     std::mt19937 rng;
 
@@ -111,6 +114,9 @@ private:
     inline static bool sort_end_nodes(std::shared_ptr<Node> const &rhs, std::shared_ptr<Node> const &lhs) {
         return rhs->start + rhs->duration > lhs->start + lhs->duration;
     }
+
+    void updateCurrentSolution(Neighbour neighbour);
+    void printDGraph(vector<vector<std::shared_ptr<Node>>> &d_graph);
 };
 
 
