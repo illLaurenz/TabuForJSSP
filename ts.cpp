@@ -489,36 +489,56 @@ void TabuSearch::updateCurrentSolution(Neighbour &neighbour) {
 
     // makespan / leftshift
     // reset starting times
-    vector<std::shared_ptr<Node> *> readyQueue = vector<std::shared_ptr<Node> *>();
-    readyQueue.reserve(2 * instance.machineCount * instance.jobCount);
+    vector<std::shared_ptr<Node> *> startNodes = vector<std::shared_ptr<Node> *>();
+    startNodes.reserve(2 * instance.machineCount * instance.jobCount);
     for (auto &job: disjunctive_graph) {
         auto *node = &job.front();
-        if ((*node)->mach_predecessor.expired()) readyQueue.emplace_back(node);
+        if ((*node)->mach_predecessor.expired()) startNodes.emplace_back(node);
         while ((*node) != nullptr) {
             (*node)->start = 0;
             node = &(*node)->job_successor;
         }
     }
-    long long pos = 0;
-    while (pos < readyQueue.size()) {
-        auto node = *readyQueue[pos];
+    for (auto & node: startNodes) {
+        recursiveStartTiming(*node);
+    }
+    /*long long pos = 0;
+    while (pos < startNodes.size()) {
+        auto node = *startNodes[pos];
         if (node->mach_successor != nullptr) {
             auto *ms = &node->mach_successor;
             (*ms)->start = std::max(node->start + node->duration, (*ms)->start);
-            readyQueue.emplace_back(ms);
+            startNodes.emplace_back(ms);
         }
         if (node->job_successor != nullptr) {
             auto *js = &node->job_successor;
             (*js)->start = std::max(node->start + node->duration, (*js)->start);
-            readyQueue.emplace_back(js);
+            startNodes.emplace_back(js);
         }
         ++pos;
-    }
+    }*/
     auto makespan = 0;
     for (auto &job: disjunctive_graph) {
         makespan = std::max(makespan, job.back()->start + job.back()->duration);
     }
     new_makespan = makespan;
+}
+
+void TabuSearch::recursiveStartTiming(std::shared_ptr<Node> const &node) const {
+    if (node->mach_successor != nullptr) {
+        auto ms = node->mach_successor;
+        if (ms->start < node->start + node->duration) {
+            ms->start = node->start + node->duration;
+            recursiveStartTiming(ms);
+        }
+    }
+    if (node->job_successor != nullptr) {
+        auto js = node->job_successor;
+        if (js->start < node->start + node->duration) {
+            js->start = node->start + node->duration;
+            recursiveStartTiming(js);
+        }
+    }
 }
 
 // checks the given solution against the tabu list.
