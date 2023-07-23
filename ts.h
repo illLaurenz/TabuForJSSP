@@ -115,7 +115,7 @@ private:
         return rhs->start + rhs->duration > lhs->start + lhs->duration;
     }
 
-    void updateCurrentSolution(Neighbour neighbour);
+    void updateCurrentSolution(Neighbour &neighbour);
     void printDGraph(vector<vector<std::shared_ptr<Node>>> &d_graph);
 };
 

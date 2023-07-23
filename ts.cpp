@@ -16,7 +16,7 @@ Solution TabuSearch::optimize_it(Solution &solution, long maxIterations) {
     currentSolution = {solution.solution, solution.makespan};
     currentBestSolution = {solution.solution, solution.makespan};
     disjunctive_graph = generateDisjunctiveGraph();
-    new_disjunctive_graph = disjunctive_graph;
+    //new_disjunctive_graph = disjunctive_graph;
     long iteration = 0;
 
     while (iteration++ <= maxIterations) {
@@ -70,9 +70,10 @@ int TabuSearch::calcTabuListSize(const JSSPInstance &instance) {
 // generates N7 like neighbourhood, with the difference that cyclic solutions are accepted and fixed
 // more computational overhead than in the paper
 vector<Neighbour> TabuSearch::generateNeighbourhood() {
-    disjunctive_graph = generateDisjunctiveGraph(); // -
-    printDGraph(new_disjunctive_graph); // -
+    //disjunctive_graph = generateDisjunctiveGraph(); // -
     calcLongestPaths(disjunctive_graph);
+    //calcLongestPaths(new_disjunctive_graph); // -
+    //printDGraph(new_disjunctive_graph); // -
     auto longest_path = findLongestPath(disjunctive_graph);
     auto block_list = generateBlockList(longest_path);
     auto neighbours_by_block = vector<vector<Neighbour>>();
@@ -136,9 +137,9 @@ vector<vector<std::shared_ptr<Node>>> TabuSearch::generateDisjunctiveGraph() con
     return _disjunctive_graph;
 }
 
-void TabuSearch::calcLongestPaths(vector<vector<std::shared_ptr<Node>>> &disjunctive_graph) const {
+void TabuSearch::calcLongestPaths(vector<vector<std::shared_ptr<Node>>> &d_graph) const {
     auto end_nodes = vector<std::shared_ptr<Node>>();
-    for (auto const &job: disjunctive_graph) {
+    for (auto const &job: d_graph) {
         if (job.back()->mach_successor == nullptr) {
             end_nodes.emplace_back(job.back());
         }
@@ -167,9 +168,9 @@ void TabuSearch::recursiveLPCalculation(std::shared_ptr<Node> const &node) const
 
 }
 
-vector<std::shared_ptr<Node>> TabuSearch::findLongestPath(const vector<vector<std::shared_ptr<Node>>>& disjunctive_graph) const {
+vector<std::shared_ptr<Node>> TabuSearch::findLongestPath(const vector<vector<std::shared_ptr<Node>>>& d_graph) const {
     auto longest_path = vector<std::shared_ptr<Node>>();
-    for (auto &job: disjunctive_graph) {
+    for (auto &job: d_graph) {
         if (job.front()->len_to_n  + job.front()->duration == currentSolution.makespan) {
             longest_path.emplace_back(job.front());
             return recursiveLPSearch(longest_path, job.front()->duration);
@@ -417,7 +418,7 @@ bool TabuSearch::tsMove(vector<Neighbour> &neighbourhood) {
     // chose random, if all tabu
     std::uniform_int_distribution<std::mt19937::result_type> dist(0,neighbourhood.size() - 1);
     auto randIndex = dist(rng);
-    auto const &neighbour = neighbourhood[randIndex];
+    auto &neighbour = neighbourhood[randIndex];
     updateCurrentSolution(neighbour); // +
     updateTabuList(neighbour);
 
@@ -428,10 +429,10 @@ bool TabuSearch::tsMove(vector<Neighbour> &neighbourhood) {
     return false;
 }
 
-void TabuSearch::updateCurrentSolution(Neighbour neighbour) {
+void TabuSearch::updateCurrentSolution(Neighbour &neighbour) {
     // old: neighbour_solution.solution[neighbour.machine] = neighbour.sequence;
     std::shared_ptr<Node> oldMachine;
-    for (auto &job: new_disjunctive_graph) {
+    for (auto &job: disjunctive_graph) {
         std::shared_ptr<Node> * node = &job.front();
         while ((*node) != nullptr) {
             if ((*node)->machine == neighbour.machine && (*node)->mach_predecessor.expired()) {
@@ -455,9 +456,9 @@ void TabuSearch::updateCurrentSolution(Neighbour neighbour) {
                 newNode->job_predecessor = (*oldNode)->job_predecessor;
                 newNode->job_successor = (*oldNode)->job_successor;
                 if (!(*oldNode)->job_predecessor.expired()) (*oldNode)->job_predecessor.lock()->job_successor = newNode;
-                else new_disjunctive_graph[newNode->job][0] = newNode;
+                else disjunctive_graph[newNode->job][0] = newNode;
                 if ((*oldNode)->job_successor != nullptr) (*oldNode)->job_successor->job_predecessor = newNode;
-                else new_disjunctive_graph[newNode->job][1] = newNode;
+                else disjunctive_graph[newNode->job][1] = newNode;
                 break;
             }
         }
@@ -470,59 +471,53 @@ void TabuSearch::updateCurrentSolution(Neighbour neighbour) {
         if (!newNode->mach_predecessor.expired()) start = std::max(start, newNode->mach_predecessor.lock()->start + newNode->mach_predecessor.lock()->duration);
         newNode->start = start;
     }
-    int len_to_n = 0;
+
+    // TODO: implement len to n cascade instead of setting 0 and calcLongestPaths
+    for (auto &job: disjunctive_graph) {
+        std::shared_ptr<Node> *node = &job.front();
+        while ((*node) != nullptr) {
+            (*node)->len_to_n = 0;
+            node = &(*node)->job_successor;
+        }
+    }
     null_node = std::shared_ptr<Node>();
     std::shared_ptr<Node> *p_last = &null_node;
     for (auto it = newNodes.rbegin(); it != newNodes.rend(); it++) {
-        if ((*it)->job_successor != nullptr) len_to_n = std::max(len_to_n, (*it)->job_successor->len_to_n);
-        (*it)->len_to_n = len_to_n;
         (*it)->mach_successor = (*p_last);
         p_last = &(*it);
-        len_to_n += (*it)->duration;
     }
 
     // makespan / leftshift
     // reset starting times
     int cntr = 0;
     std::queue<std::shared_ptr<Node> *> readyQueue = std::queue<std::shared_ptr<Node> *>();
-    for (auto &job: new_disjunctive_graph) {
+    for (auto &job: disjunctive_graph) {
         auto *node = &job.front();
+        if ((*node)->mach_predecessor.expired()) readyQueue.emplace(node);
         while ((*node) != nullptr) {
             (*node)->start = 0;
-            if ((*node)->mach_predecessor.expired()) readyQueue.emplace(node);
             node = &(*node)->job_successor;
-            cntr++;
         }
     }
-    cntr = 0;
     while (!readyQueue.empty()) {
         auto node = *readyQueue.front();
         readyQueue.pop();
         if (node->mach_successor != nullptr) {
             auto *ms = &node->mach_successor;
-            (*ms)->start = node->start + node->duration;
+            (*ms)->start = std::max(node->start + node->duration, (*ms)->start);
             readyQueue.emplace(ms);
             cntr++;
         }
-    }
-    cntr = 0;
-    for (auto &job: new_disjunctive_graph) {
-        readyQueue.emplace(&job.front());
-    }
-
-    while (!readyQueue.empty()) {
-        auto node = *readyQueue.front();
-        readyQueue.pop();
         if (node->job_successor != nullptr) {
             auto *js = &node->job_successor;
-            (*js)->start = std::max((*js)->start, node->start + node->duration);
+            (*js)->start = std::max(node->start + node->duration, (*js)->start);
             readyQueue.emplace(js);
             cntr++;
         }
     }
 
     auto makespan = 0;
-    for (auto &job: new_disjunctive_graph) {
+    for (auto &job: disjunctive_graph) {
         makespan = std::max(makespan, job.back()->start + job.back()->duration);
     }
     new_makespan = makespan;
@@ -601,7 +596,7 @@ void TabuSearch::printDGraph(vector<vector<std::shared_ptr<Node>>> &d_graph) {
             if ((*node)->mach_predecessor.expired()) {
                 auto *mnode = node;
                 while ((*mnode) != nullptr) {
-                    solution[(*mnode)->machine].emplace_back((*mnode)->start);
+                    solution[(*mnode)->machine].emplace_back((*mnode)->len_to_n);
                     mnode = &(*mnode)->mach_successor;
                 }
             }
@@ -615,7 +610,7 @@ void TabuSearch::printDGraph(vector<vector<std::shared_ptr<Node>>> &d_graph) {
             if ((*node)->mach_predecessor.expired()) {
                 auto *mnode = node;
                 while ((*mnode) != nullptr) {
-                    solution2[(*mnode)->machine].emplace_back((*mnode)->start);
+                    solution2[(*mnode)->machine].emplace_back((*mnode)->len_to_n);
                     mnode = &(*mnode)->mach_successor;
                 }
             }

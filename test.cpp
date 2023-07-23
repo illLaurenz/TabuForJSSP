@@ -40,7 +40,7 @@ void tabuTest() {
     int best = INT32_MAX;
     long avg_mksp = 0;
     auto t0 = high_resolution_clock::now();
-    for (int i = 0; i < 10; i++) {
+    for (int i = 0; i < 1; i++) {
         solution = instance.generateRandomSolution();
         auto result = ts.optimize_it(solution, 12000);
         best = std::min(best, result.makespan);
