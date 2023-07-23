@@ -525,15 +525,15 @@ void TabuSearch::updateCurrentSolution(Neighbour &neighbour) {
 }
 
 void TabuSearch::recursiveStartTiming(std::shared_ptr<Node> const &node) const {
-    if (node->mach_successor != nullptr) {
-        auto ms = node->mach_successor;
+    auto ms = node->mach_successor;
+    auto js = node->job_successor;
+    if (ms) {
         if (ms->start < node->start + node->duration) {
             ms->start = node->start + node->duration;
             recursiveStartTiming(ms);
         }
     }
-    if (node->job_successor != nullptr) {
-        auto js = node->job_successor;
+    if (js) {
         if (js->start < node->start + node->duration) {
             js->start = node->start + node->duration;
             recursiveStartTiming(js);
