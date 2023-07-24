@@ -65,7 +65,7 @@ private:
     // reads an instance from file
     static vector<vector<Operation>> readInstance(string &filename);
 
-    // read first line from file (#jobs, #machines)
+    // read first line from file (#sequence, #machines)
     static std::tuple<int,int> readMetrics(string &filename);
 
     // random metric for calcMakespanAndFixSolution

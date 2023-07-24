@@ -10,22 +10,22 @@ void TabuSearch::logMakespan(int makespan) {
 }
 
 // main method: resets algo vars and starts loop
-Solution TabuSearch::optimize_it(Solution &solution, long maxIterations) {
+Solution TabuSearch::optimize_it(Solution &solution, long max_iterations) {
     tabuList = vector<TabuListItem>();
     tabuId = 0;
     currentSolution = {solution.solution, solution.makespan};
-    currentBestSolution = {solution.solution, solution.makespan};
+    bestSolution = {solution.solution, solution.makespan};
     disjunctive_graph = generateDisjunctiveGraph();
     long iteration = 0;
 
-    while (iteration++ <= maxIterations) {
+    while (iteration++ <= max_iterations) {
         auto neighbourhood = generateNeighbourhood();
         tsMove(neighbourhood);
-        if (currentSolution.makespan < currentBestSolution.makespan) {
-            currentBestSolution = currentSolution;
+        if (currentSolution.makespan < bestSolution.makespan) {
+            bestSolution = currentSolution;
         }
     }
-    return Solution{currentBestSolution.solution, currentBestSolution.makespan};
+    return bestSolution;
 }
 
 // main method: resets algo vars and starts loop
@@ -36,26 +36,26 @@ BMResult TabuSearch::optimize(Solution &solution, int seconds, int known_optimum
     tabuList = vector<TabuListItem>();
     tabuId = 0;
     currentSolution = {solution.solution, solution.makespan};
-    currentBestSolution = {solution.solution, solution.makespan};
-    logMakespan(currentBestSolution.makespan);
+    bestSolution = {solution.solution, solution.makespan};
+    logMakespan(bestSolution.makespan);
 
     std::chrono::duration<double> elapsed_seconds = (std::chrono::system_clock::now() - t_start);
     // main loop
-    while (elapsed_seconds.count() < seconds && known_optimum != currentBestSolution.makespan) {
+    while (elapsed_seconds.count() < seconds && known_optimum != bestSolution.makespan) {
         auto neighbourhood = generateNeighbourhood();
         tsMove(neighbourhood);
-        if (currentSolution.makespan < currentBestSolution.makespan) {
-            currentBestSolution = currentSolution;
-            logMakespan(currentBestSolution.makespan);
+        if (currentSolution.makespan < bestSolution.makespan) {
+            bestSolution = currentSolution;
+            logMakespan(bestSolution.makespan);
         }
         elapsed_seconds = (std::chrono::system_clock::now() - t_start);
     }
-    return BMResult{currentBestSolution.solution, currentBestSolution.makespan, makespan_history};
+    return BMResult{bestSolution.solution, bestSolution.makespan, makespan_history};
 }
 
 // calc the size of the tabu list based on job and machine count
-int TabuSearch::calcTabuListSize(const JSSPInstance &instance) {
-    double min = 10 + instance.jobCount / instance.machineCount;
+int TabuSearch::calcTabuListSize() {
+    double min = 10 + double(instance.jobCount) / instance.machineCount;
     double max;
     if (instance.machineCount * 2 > instance.jobCount) {
         max = 1.4 * min;
@@ -107,14 +107,14 @@ vector<vector<std::shared_ptr<Node>>> TabuSearch::generateDisjunctiveGraph() con
                 auto job_predecessor = _disjunctive_graph[job].empty() ? null_node : _disjunctive_graph[job].back();
                 auto machine_predecessor = disjunctive_arcs[machine].empty() ? null_node : disjunctive_arcs[machine].back();
                 auto node = std::make_shared<Node>(Node{job_predecessor, machine_predecessor, nullptr, nullptr, machine, job, start, duration, 0});
-                if (job_predecessor != nullptr) {
+                if (job_predecessor) {
                     _disjunctive_graph[job].back()->job_successor = node;
                     _disjunctive_graph[job].back() = node;
                 } else {
                     _disjunctive_graph[job].emplace_back(node);
                     _disjunctive_graph[job].emplace_back(node);
                 }
-                if (machine_predecessor != nullptr) {
+                if (machine_predecessor) {
                     disjunctive_arcs[machine].back()->mach_successor = node;
                     disjunctive_arcs[machine].back() = node;
                 }else {
@@ -166,13 +166,13 @@ void TabuSearch::recursiveLPCalculation(std::shared_ptr<Node> const &node) const
 }
 
 vector<std::shared_ptr<Node>> TabuSearch::findLongestPath(const vector<vector<std::shared_ptr<Node>>>& d_graph) const {
-    auto longest_path = vector<std::shared_ptr<Node>>();
+    std::shared_ptr<Node> start_node;
     for (auto const &job: d_graph) {
         if (job.front()->len_to_n + job.front()->duration == currentSolution.makespan) {
-            longest_path.emplace_back(job.front());
-            break;
+            start_node = job.front();
         }
     }
+    vector<std::shared_ptr<Node>> longest_path = {start_node};
     while (longest_path.back()->len_to_n != 0) {
         if (longest_path.back()->mach_successor) {
             auto len = longest_path.back()->mach_successor->len_to_n + longest_path.back()->mach_successor->duration;
@@ -213,15 +213,10 @@ vector<vector<std::shared_ptr<Node>>> TabuSearch::generateBlockList(vector<std::
 
 vector<Neighbour> TabuSearch::generateNeighboursFromBlock(vector<std::shared_ptr<Node>> const &block) const {
     auto neighbours = vector<Neighbour>();
-    int start_index, end_index;
     int machine_no = block.front()->machine;
     auto const &machine_seq = currentSolution.solution[machine_no];
-    for (int i = 0; i < machine_seq.size(); i++) {
-        if (machine_seq[i] == block.front()->job) {
-            start_index = i;
-            break;
-        }
-    }
+    auto start_index = std::find(machine_seq.begin(), machine_seq.end(), block.front()->job) - machine_seq.begin();
+
     if (block.size() == 2) {
         if (checkForwardSwap(block.front(), block.back()) || checkBackwardSwap(block.front(), block.back())) {
             neighbours.emplace_back(forwardSwap(machine_seq, start_index, 0, 1, machine_no, block));
@@ -297,17 +292,17 @@ Neighbour TabuSearch::forwardSwap(vector<int> sequence, int const start_index, i
     }
 
     {
-        int js_u = block[u]->job_successor == nullptr ? 0 : block[u]->job_successor->len_to_n + block[u]->job_successor->duration;
-        int ms_v = block[v]->mach_successor == nullptr ? 0 : block[v]->mach_successor->len_to_n + block[v]->mach_successor->duration;
+        int js_u = !block[u]->job_successor ? 0 : block[u]->job_successor->len_to_n + block[u]->job_successor->duration;
+        int ms_v = !block[v]->mach_successor ? 0 : block[v]->mach_successor->len_to_n + block[v]->mach_successor->duration;
         len_from_i[0] = std::max(js_u, ms_v) + block[u]->duration;
     }
     {
-        int js_v = block[v]->job_successor == nullptr ? 0 : block[v]->job_successor->len_to_n + block[v]->job_successor->duration;
+        int js_v = !block[v]->job_successor ? 0 : block[v]->job_successor->len_to_n + block[v]->job_successor->duration;
         int y_u = len_from_i[0];
         len_from_i.back() = std::max(js_v, y_u) + block[v]->duration;
     }
     for (int w = size - 2; w > 0; w--) {
-        int js_w = block[w]->job_successor == nullptr ? 0 : block[w]->job_successor->len_to_n + block[w]->job_successor->duration;
+        int js_w = !block[w]->job_successor ? 0 : block[w]->job_successor->len_to_n + block[w]->job_successor->duration;
         int ms_w = len_from_i[w + 1];
         len_from_i[w] = std::max(js_w, ms_w) + block[w]->duration;
     }
@@ -359,17 +354,17 @@ Neighbour TabuSearch::backwardSwap(vector<int> sequence, int const start_index, 
 
     {
         int l = size - 2;
-        int js_l = block[l]->job_successor == nullptr ? 0 : block[l]->job_successor->len_to_n + block[l]->job_successor->duration;
-        int ms_v = block[v]->mach_successor == nullptr ? 0 : block[v]->mach_successor->len_to_n + block[v]->mach_successor->duration;
+        int js_l = !block[l]->job_successor ? 0 : block[l]->job_successor->len_to_n + block[l]->job_successor->duration;
+        int ms_v = !block[v]->mach_successor ? 0 : block[v]->mach_successor->len_to_n + block[v]->mach_successor->duration;
         len_from_i[l] = std::max(js_l, ms_v) + block[l]->duration;
     }
     for (int w = size - 3; w >= 0; w--) {
-        int js_w = block[w]->job_successor == nullptr ? 0 : block[w]->job_successor->len_to_n + block[w]->job_successor->duration;
+        int js_w = !block[w]->job_successor ? 0 : block[w]->job_successor->len_to_n + block[w]->job_successor->duration;
         int y_ms = len_from_i[w + 1];
         len_from_i[w] = std::max(js_w, y_ms) + block[w]->duration;
     }
     {
-        int js_v = block[v]->job_successor == nullptr ? 0 : block[v]->job_successor->len_to_n + block[v]->job_successor->duration;
+        int js_v = !block[v]->job_successor ? 0 : block[v]->job_successor->len_to_n + block[v]->job_successor->duration;
         int y_u = len_from_i[0];
         len_from_i.back() = std::max(js_v, y_u) + block[v]->duration;
     }
@@ -390,12 +385,12 @@ bool TabuSearch::tsMove(vector<Neighbour> &neighbourhood) {
     }
     std::sort(neighbourhood.begin(), neighbourhood.end(), compareNeighbours);
     for (auto &neighbour: neighbourhood) {
-        if (neighbour.makespan < currentBestSolution.makespan) {
+        if (neighbour.makespan < bestSolution.makespan) {
             // aspiration
             auto candidate_solution = currentSolution.solution;
             candidate_solution[neighbour.machine] = neighbour.sequence;
             int exact_makespan = instance.calcMakespan(candidate_solution);
-            if (exact_makespan >= currentBestSolution.makespan && isTabu(neighbour)) continue;
+            if (exact_makespan >= bestSolution.makespan && isTabu(neighbour)) continue;
 
             updateCurrentSolution(neighbour);
             updateTabuList(neighbour);
@@ -421,7 +416,7 @@ bool TabuSearch::tsMove(vector<Neighbour> &neighbourhood) {
 }
 
 void TabuSearch::updateCurrentSolution(Neighbour &neighbour) {
-    // old: neighbour_solution.solution[neighbour.machine] = neighbour.sequence;
+    // find first operation of the machine which is altered
     std::shared_ptr<Node> oldMachine;
     for (auto &job: disjunctive_graph) {
         std::shared_ptr<Node> * node = &job.front();
@@ -432,6 +427,7 @@ void TabuSearch::updateCurrentSolution(Neighbour &neighbour) {
             node = &(*node)->job_successor;
         }
     }
+    // create sequence of new nodes for the new machine
     auto null_node = std::shared_ptr<Node>();
     auto &last = null_node;
     vector<std::shared_ptr<Node>> newNodes = vector<std::shared_ptr<Node>>();
@@ -439,6 +435,7 @@ void TabuSearch::updateCurrentSolution(Neighbour &neighbour) {
         last = std::make_shared<Node>(Node{null_node, last, nullptr, nullptr, neighbour.machine, jobNo, -1, -1, 0});
         newNodes.emplace_back(last);
     }
+    // rearrange pointers to new sequence
     auto *oldNode = &oldMachine;
     while ((*oldNode) != nullptr) {
         for (auto &newNode: newNodes) {
@@ -455,14 +452,14 @@ void TabuSearch::updateCurrentSolution(Neighbour &neighbour) {
         }
         oldNode = &(*oldNode)->mach_successor;
     }
-    int mach_time = 0;
-    for (auto &newNode: newNodes) {
-        int start = mach_time;
-        if (!newNode->job_predecessor.expired()) start = std::max(start, newNode->job_predecessor.lock()->start + newNode->job_predecessor.lock()->duration);
-        if (!newNode->mach_predecessor.expired()) start = std::max(start, newNode->mach_predecessor.lock()->start + newNode->mach_predecessor.lock()->duration);
-        newNode->start = start;
+    // set machine successors
+    null_node = std::shared_ptr<Node>();
+    std::shared_ptr<Node> *p_last = &null_node;
+    for (auto it = newNodes.rbegin(); it != newNodes.rend(); it++) {
+        (*it)->mach_successor = (*p_last);
+        p_last = &(*it);
     }
-
+    // reset all longest paths to dummy end node
     for (auto &job: disjunctive_graph) {
         std::shared_ptr<Node> *node = &job.front();
         while ((*node) != nullptr) {
@@ -470,15 +467,7 @@ void TabuSearch::updateCurrentSolution(Neighbour &neighbour) {
             node = &(*node)->job_successor;
         }
     }
-    null_node = std::shared_ptr<Node>();
-    std::shared_ptr<Node> *p_last = &null_node;
-    for (auto it = newNodes.rbegin(); it != newNodes.rend(); it++) {
-        (*it)->mach_successor = (*p_last);
-        p_last = &(*it);
-    }
-
-    // makespan / leftshift
-    // reset starting times
+    // leftshift / recalculate starting times
     vector<std::shared_ptr<Node> *> startNodes = vector<std::shared_ptr<Node> *>();
     startNodes.reserve(2 * instance.machineCount * instance.jobCount);
     for (auto &job: disjunctive_graph) {
@@ -495,11 +484,11 @@ void TabuSearch::updateCurrentSolution(Neighbour &neighbour) {
         auto &ms = node->mach_successor;
         auto &js = node->job_successor;
         auto end = node->start + node->duration;
-        if (ms != nullptr && ms->start < end) {
+        if (ms && ms->start < end) {
             ms->start = end;
             startNodes.emplace_back(&ms);
         }
-        if (js != nullptr && js->start < end) {
+        if (js && js->start < end) {
             js->start = end;
             startNodes.emplace_back(&js);
         }
@@ -513,21 +502,17 @@ void TabuSearch::updateCurrentSolution(Neighbour &neighbour) {
 }
 
 // checks the given solution against the tabu list.
-// tabu list contains jobs the block of jobs (with indices) which were deciding for the move
+// tabu list contains sequence the block of sequence (with indices) which were deciding for the move
 bool TabuSearch::isTabu(Neighbour const &neighbour) {
     for (auto const &tabu: tabuList) {
         if (neighbour.machine != tabu.machine) continue;
-        int index = 0;
-        for (int i = 0; i < tabu.indices.size(); i++) {
-            index = tabu.indices[0] + i;
-            if (neighbour.sequence[index] != tabu.jobs[i]) {
-                index = 0;
-                break;
+        bool isTabu = true;
+        for (auto i: tabu.indices) {
+            if (neighbour.sequence[i] != tabu.sequence[i]) {
+                isTabu = false;
             }
         }
-        if (index != 0) {
-            return true;
-        }
+        if (isTabu) return true;
     }
     return false;
 }
@@ -553,26 +538,25 @@ void TabuSearch::updateTabuList(const Neighbour &neighbour) {
     }
     // constants
     const int tt = 2, d1 = 5, d2 = 12;
-    int tenture_max = std::max((neighbour.makespan - currentBestSolution.makespan) / d1, d2);
+    int tenture_max = std::max((neighbour.makespan - bestSolution.makespan) / d1, d2);
     std::uniform_int_distribution<std::mt19937::result_type> dist(0,tenture_max);
     int tenure = tt + dist(rng);
     vector<int> indices, jobs;
     // save difference on block machine as TabuListItem
-    int index1 = -1, index2 = -1;
+    int start_index = -1, end_index = -1;
     for (int i = 0; i < neighbour.sequence.size(); i++) {
         auto neighbour_op = neighbour.sequence[i];
         auto sol_op = currentSolution.solution[neighbour.machine][i];
-        if (neighbour_op != sol_op && index1 == -1) {
-            index1 = i;
-            index2 = i;
+        if (neighbour_op != sol_op && start_index == -1) {
+            start_index = i;
+            end_index = i;
         } else if (neighbour_op != sol_op) {
-            index2 = i;
+            end_index = i;
         }
     }
-    for (; index1 <= index2; index1++) {
-        indices.emplace_back(index1);
-        jobs.emplace_back(neighbour.sequence[index1]);
+    for (int i = start_index; i <= end_index; i++) {
+        indices.emplace_back(i);
     }
 
-   tabuList.emplace_back(TabuListItem{tenure, neighbour.machine, ++tabuId, indices, jobs});
+   tabuList.emplace_back(TabuListItem{tenure, neighbour.machine, ++tabuId, indices, neighbour.sequence});
 }

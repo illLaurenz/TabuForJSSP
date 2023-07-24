@@ -4,18 +4,19 @@
 #include "jssp.h"
 #include <memory>
 #include <chrono>
+#include <iostream>
 
 struct TabuListItem {
     int tabuTenure;
     int machine;
     int id;
     vector<int> indices;
-    vector<int> jobs;
+    vector<int> sequence;
     bool operator==(TabuListItem &other) const {
         return id == other.id;
     }
     bool operator==(TabuListItem const &other) const {
-      return id == other.id;
+        return id == other.id;
     }
 };
 
@@ -40,10 +41,10 @@ struct Node {
 class TabuSearch {
 public:
     explicit TabuSearch (JSSPInstance &instance):
-    instance(instance), tabuListSize(calcTabuListSize(instance)), rng(instance.getSeed()) { };
+    instance(instance), tabuListSize(calcTabuListSize()), rng(instance.getSeed()) { };
 
     // optimize a given solution for maxIteration iterations. mainly for memetic algorithm.
-    Solution optimize_it(Solution &solution, long maxIterations);
+    Solution optimize_it(Solution &solution, long max_iterations);
 
     // standalone mode / logging on. optimize a solution for a maximum amount of seconds, regardless the time constraint
     BMResult optimize(Solution &solution, int seconds, int known_optimum=0);
@@ -60,7 +61,7 @@ private:
 
     // initialized on starting search
     Solution currentSolution;
-    Solution currentBestSolution;
+    Solution bestSolution;
     int new_makespan = 0;
     vector<vector<std::shared_ptr<Node>>> disjunctive_graph;
     vector<vector<std::shared_ptr<Node>>> new_disjunctive_graph;
@@ -72,7 +73,7 @@ private:
     std::chrono::time_point<std::chrono::system_clock> t_start;
 
     // helper function for constructor
-    int calcTabuListSize(JSSPInstance const &instance);
+    int calcTabuListSize();
 
     // tabu move methods
     bool tsMove(vector<Neighbour> &neighbourhood);
@@ -89,8 +90,6 @@ private:
 
     [[nodiscard]] vector<std::shared_ptr<Node>> findLongestPath(const vector<vector<std::shared_ptr<Node>>>& disjunctive_graph) const;
 
-    vector<std::shared_ptr<Node>> recursiveLPSearch(vector<std::shared_ptr<Node>> &longest_path, int sum_durations) const;
-
     void calcLongestPaths(vector<vector<std::shared_ptr<Node>>> &disjunctive_graph) const;
 
     void recursiveLPCalculation(const std::shared_ptr<Node>& node) const;
@@ -103,7 +102,7 @@ private:
     Neighbour static backwardSwap(vector<int> sequence, int start_index, int u, int v, int machine, vector<std::shared_ptr<Node>> const &block);
 
     inline static bool checkForwardSwap(std::shared_ptr<Node> const &u, std::shared_ptr<Node> const &v) {
-        return u->job_successor == nullptr || v->len_to_n + v->duration >= u->job_successor->len_to_n + u->job_successor->duration;
+        return !u->job_successor || v->len_to_n + v->duration >= u->job_successor->len_to_n + u->job_successor->duration;
     }
     inline static bool checkBackwardSwap(std::shared_ptr<Node> const &u, std::shared_ptr<Node> const &v) {
         return v->job_predecessor.expired() || u->start + u->duration >= v->job_predecessor.lock()->start + v->job_predecessor.lock()->duration;
