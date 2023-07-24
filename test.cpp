@@ -53,7 +53,7 @@ void tabuTest() {
 
 int main() {
     auto t_start = std::chrono::system_clock::now();
-    for (int i = 0; i < 1; i++)
+    for (int i = 0; i < 10; i++)
         tabuTest();
 
     std::chrono::duration<double> elapsed_seconds = (std::chrono::system_clock::now() - t_start);
