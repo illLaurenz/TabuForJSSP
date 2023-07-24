@@ -145,43 +145,10 @@ void TabuSearch::calcLongestPaths(vector<vector<std::shared_ptr<Node>>> &d_graph
         }
     }
     std::sort(end_nodes.begin(), end_nodes.end(), sort_end_nodes);
-    auto weak_nodes = vector<std::weak_ptr<Node>>();
-    weak_nodes.reserve(2 * instance.machineCount * instance.jobCount);
-    for (auto &node: end_nodes) {
-        auto len = node->len_to_n + node->duration;
-        auto mp = node->mach_predecessor;
-        if (mp.lock()->len_to_n < len) {
-            mp.lock()->len_to_n = len;
-            weak_nodes.emplace_back(mp);
-        }
-        auto jp = node->job_predecessor;
-        if (jp.lock()->len_to_n < len) {
-            jp.lock()->len_to_n = len;
-            weak_nodes.emplace_back(jp);
-        }
-    }
-    long long pos = 0;
-    while (pos < weak_nodes.size()) {
-        auto node = weak_nodes[pos++].lock();
-        auto len = node->len_to_n + node->duration;
-        if (!node->mach_predecessor.expired()) {
-            auto mp = node->mach_predecessor;
-            if (mp.lock()->len_to_n < len) {
-                mp.lock()->len_to_n = len;
-                weak_nodes.emplace_back(mp);
-            }
-        }
-        if (!node->job_predecessor.expired()) {
-            auto jp = node->job_predecessor;
-            if (jp.lock()->len_to_n < len) {
-                jp.lock()->len_to_n = len;
-                weak_nodes.emplace_back(jp);
-            }
-        }
-    }
-    /*for (auto &e: end_nodes) {
+
+    for (auto &e: end_nodes) {
         recursiveLPCalculation(e);
-    }*/
+    }
 }
 
 void TabuSearch::recursiveLPCalculation(std::shared_ptr<Node> const &node) const {
