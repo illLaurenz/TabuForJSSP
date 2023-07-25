@@ -201,9 +201,7 @@ vector<Neighbour> TabuSearch::generateNeighboursFromBlock(vector<std::shared_ptr
     auto start_index = std::find(machine_seq.begin(), machine_seq.end(), block.front()->job) - machine_seq.begin();
 
     if (block.size() == 2) {
-        if (checkForwardSwap(block.front(), block.back()) || checkBackwardSwap(block.front(), block.back())) {
-            neighbours.emplace_back(forwardSwap(machine_seq, start_index, 0, 1, machine_no, block));
-        }
+        neighbours.emplace_back(forwardSwap(machine_seq, start_index, 0, 1, machine_no, block));
     } else {
         for (int u = 1; u < block.size() - 1; u++) {
             // move middle operations behind the last
