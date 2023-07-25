@@ -1,24 +1,10 @@
 #ifndef HYBRID_EVO_ALGORITHM_TS_H
 #define HYBRID_EVO_ALGORITHM_TS_H
 
-#include "jssp.h"
 #include <memory>
 #include <chrono>
 #include <iostream>
-
-struct TabuListItem {
-    int tabuTenure;
-    int machine;
-    int id;
-    vector<int> indices;
-    vector<int> sequence;
-    bool operator==(TabuListItem &other) const {
-        return id == other.id;
-    }
-    bool operator==(TabuListItem const &other) const {
-        return id == other.id;
-    }
-};
+#include "jssp.h"
 
 enum SwapDirection {forward, backward, adjacent};
 
@@ -43,10 +29,12 @@ struct Node {
     int len_to_n;
 };
 
+#include "tabu_list.h"
+
 class TabuSearch {
 public:
     explicit TabuSearch (JSSPInstance &instance):
-    instance(instance), tabuListSize(calcTabuListSize()), rng(instance.getSeed()) { };
+    instance(instance), rng(instance.getSeed()), tabuList(instance) { };
 
     // optimize a given solution for maxIteration iterations. mainly for memetic algorithm.
     Solution optimize_it(Solution &solution, long max_iterations);
@@ -57,9 +45,7 @@ public:
 private:
     // constructor fields
     JSSPInstance &instance;
-
-    // auto generated in constructor
-    const int tabuListSize;
+    TabuList tabuList;
 
     // logging intermediate makespans while running in standalone mode
     vector<std::tuple<double, int>> makespan_history;
@@ -69,20 +55,14 @@ private:
     Solution bestSolution;
     int new_makespan = 0;
     vector<vector<std::shared_ptr<Node>>> disjunctive_graph;
-    vector<TabuListItem> tabuList;
     std::mt19937 rng;
 
     // counter
     int tabuId = 0;
     std::chrono::time_point<std::chrono::system_clock> t_start;
 
-    // helper function for constructor
-    int calcTabuListSize();
-
     // tabu move methods
     bool tsMove(vector<Neighbour> &neighbourhood);
-    void updateTabuList(Neighbour const &neighbour);
-    bool isTabu(Neighbour const &neighbour);
 
     // generate N7 like neighbourhood to a solution
     vector<Neighbour> generateNeighbourhood();

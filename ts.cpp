@@ -1,4 +1,3 @@
-#include <cmath>
 #include "ts.h"
 #include <algorithm>
 #include <iostream>
@@ -11,8 +10,7 @@ void TabuSearch::logMakespan(int makespan) {
 
 // main method: resets algo vars and starts loop
 Solution TabuSearch::optimize_it(Solution &solution, long max_iterations) {
-    tabuList = vector<TabuListItem>();
-    tabuId = 0;
+    tabuList.reset();
     currentSolution = {solution.solution, solution.makespan};
     bestSolution = {solution.solution, solution.makespan};
     disjunctive_graph = generateDisjunctiveGraph();
@@ -33,8 +31,7 @@ BMResult TabuSearch::optimize(Solution &solution, int seconds, int known_optimum
     t_start = std::chrono::system_clock::now();
     makespan_history = vector<std::tuple<double,int>>();
 
-    tabuList = vector<TabuListItem>();
-    tabuId = 0;
+    tabuList.reset();
     currentSolution = {solution.solution, solution.makespan};
     bestSolution = {solution.solution, solution.makespan};
     logMakespan(bestSolution.makespan);
@@ -51,19 +48,6 @@ BMResult TabuSearch::optimize(Solution &solution, int seconds, int known_optimum
         elapsed_seconds = (std::chrono::system_clock::now() - t_start);
     }
     return BMResult{bestSolution.solution, bestSolution.makespan, makespan_history};
-}
-
-// calc the size of the tabu list based on job and machine count
-int TabuSearch::calcTabuListSize() {
-    double min = 10 + double(instance.jobCount) / instance.machineCount;
-    double max;
-    if (instance.machineCount * 2 > instance.jobCount) {
-        max = 1.4 * min;
-    } else {
-        max = 1.5 * min;
-    }
-    std::uniform_real_distribution<> dist(0,1);
-    return std::ceil(dist(rng) * (max - min) + min);
 }
 
 // generates N7 like neighbourhood, with the difference that cyclic solutions are accepted and fixed
@@ -390,16 +374,16 @@ bool TabuSearch::tsMove(vector<Neighbour> &neighbourhood) {
             auto candidate_solution = currentSolution.solution;
             candidate_solution[neighbour.machine] = neighbour.sequence;
             int exact_makespan = instance.calcMakespan(candidate_solution);
-            if (exact_makespan >= bestSolution.makespan && isTabu(neighbour)) continue;
+            if (exact_makespan >= bestSolution.makespan && tabuList.isTabu(neighbour)) continue;
 
             updateCurrentSolution(neighbour);
-            updateTabuList(neighbour);
+            tabuList.updateTabuList(neighbour, bestSolution.makespan);
             currentSolution.solution[neighbour.machine] = neighbour.sequence;
             return true;
-        } else if (!isTabu(neighbour)) {
+        } else if (!tabuList.isTabu(neighbour)) {
             // best non tabu
             updateCurrentSolution(neighbour);
-            updateTabuList(neighbour);
+            tabuList.updateTabuList(neighbour, bestSolution.makespan);
             currentSolution.solution[neighbour.machine] = neighbour.sequence;
             return false;
         }
@@ -410,7 +394,7 @@ bool TabuSearch::tsMove(vector<Neighbour> &neighbourhood) {
     auto &neighbour = neighbourhood[randIndex];
 
     updateCurrentSolution(neighbour);
-    updateTabuList(neighbour);
+    tabuList.updateTabuList(neighbour, bestSolution.makespan);
     currentSolution.solution[neighbour.machine] = neighbour.sequence;
     return false;
 }
@@ -492,52 +476,4 @@ void TabuSearch::updateCurrentSolution(Neighbour &neighbour) {
         makespan = std::max(makespan, job.back()->start + job.back()->duration);
     }
     currentSolution.makespan = makespan;
-}
-
-// checks the given solution against the tabu list.
-// tabu list contains sequence the block of sequence (with indices) which were deciding for the move
-bool TabuSearch::isTabu(Neighbour const &neighbour) {
-    for (auto const &tabu: tabuList) {
-        if (neighbour.machine != tabu.machine) continue;
-        bool isTabu = true;
-        for (auto i: tabu.indices) {
-            if (neighbour.sequence[i] != tabu.sequence[i]) {
-                isTabu = false;
-            }
-        }
-        if (isTabu) return true;
-    }
-    return false;
-}
-
-// updates tabu list after a tabu move
-void TabuSearch::updateTabuList(const Neighbour &neighbour) {
-    TabuListItem smallest = TabuListItem{INT32_MAX};
-    int next = 0;
-    while (next < tabuList.size()) {
-        --tabuList[next].tabuTenure;
-        if (tabuList[next].tabuTenure <= 0) {
-            auto item = tabuList[next];
-            tabuList.erase(tabuList.begin() + next);
-            continue;
-        } else if (tabuList[next].tabuTenure < smallest.tabuTenure){
-            smallest = tabuList[next];
-        }
-        ++next;
-    }
-    if (tabuList.size() >= tabuListSize) {
-        auto pos = std::find(tabuList.begin(), tabuList.end(), smallest);
-        tabuList.erase(pos);
-    }
-    // constants
-    const int tt = 2, d1 = 5, d2 = 12;
-    int tenture_max = std::max((neighbour.makespan - bestSolution.makespan) / d1, d2);
-    std::uniform_int_distribution<std::mt19937::result_type> dist(0,tenture_max);
-    int tenure = tt + dist(rng);
-    vector<int> indices;
-    for (int i = neighbour.start_pos; i <= neighbour.end_pos; i++) {
-        indices.emplace_back(i);
-    }
-
-   tabuList.emplace_back(TabuListItem{tenure, neighbour.machine, ++tabuId, indices, neighbour.sequence});
 }
