@@ -64,7 +64,7 @@ public:
         std::uniform_int_distribution<std::mt19937::result_type> dist(0,tenture_max);
         int tenure = tt + dist(rng);
 
-        tabuList.emplace_back(TabuListItem{tenure, neighbour.machine, ++tabuId, neighbour.start_pos, neighbour.end_pos, neighbour.sequence});
+        tabuList.emplace_back(TabuListItem{tenure, neighbour.machine, ++tabuId, neighbour.startIndex, neighbour.endIndex, neighbour.sequence});
     }
 
     int calcTabuListSize(JSSPInstance &instance) {

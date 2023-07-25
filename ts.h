@@ -12,21 +12,21 @@ struct Neighbour {
     vector<int> sequence;
     int machine;
     int makespan;
-    int start_pos;
-    int end_pos;
+    int startIndex;
+    int endIndex;
     SwapDirection swap;
 };
 
 struct Node {
-    std::weak_ptr<Node> job_predecessor;
-    std::weak_ptr<Node> mach_predecessor;
-    std::shared_ptr<Node> job_successor;
-    std::shared_ptr<Node> mach_successor;
+    std::weak_ptr<Node> jobPredecessor;
+    std::weak_ptr<Node> machPredecessor;
+    std::shared_ptr<Node> jobSuccessor;
+    std::shared_ptr<Node> machSuccessor;
     int machine;
     int job;
     int start;
     int duration;
-    int len_to_n;
+    int lenToN;
 };
 
 #include "tabu_list.h"
@@ -48,18 +48,16 @@ private:
     TabuList tabuList;
 
     // logging intermediate makespans while running in standalone mode
-    vector<std::tuple<double, int>> makespan_history;
+    vector<std::tuple<double, int>> makespanHistory;
 
     // initialized on starting search
     Solution currentSolution;
     Solution bestSolution;
-    int new_makespan = 0;
-    vector<vector<std::shared_ptr<Node>>> disjunctive_graph;
+    vector<vector<std::shared_ptr<Node>>> disjunctiveGraph;
     std::mt19937 rng;
 
     // counter
-    int tabuId = 0;
-    std::chrono::time_point<std::chrono::system_clock> t_start;
+    std::chrono::time_point<std::chrono::system_clock> startTime;
 
     // tabu move methods
     bool tsMove(vector<Neighbour> &neighbourhood);
@@ -76,7 +74,7 @@ private:
 
     void calcLongestPaths(vector<vector<std::shared_ptr<Node>>> &disjunctive_graph) const;
 
-    void recursiveLPCalculation(const std::shared_ptr<Node>& node) const;
+    void recursiveLongestPathCalculation(const std::shared_ptr<Node>& node) const;
 
     [[nodiscard]] static vector<vector<std::shared_ptr<Node>>> generateBlockList(const vector<std::shared_ptr<Node>> &longest_path) ;
 
@@ -86,15 +84,15 @@ private:
     Neighbour static backwardSwap(vector<int> sequence, int start_index, int u, int v, int machine, vector<std::shared_ptr<Node>> const &block);
 
     inline static bool checkForwardSwap(std::shared_ptr<Node> const &u, std::shared_ptr<Node> const &v) {
-        return !u->job_successor || v->len_to_n + v->duration >= u->job_successor->len_to_n + u->job_successor->duration;
+        return !u->jobSuccessor || v->lenToN + v->duration >= u->jobSuccessor->lenToN + u->jobSuccessor->duration;
     }
     inline static bool checkBackwardSwap(std::shared_ptr<Node> const &u, std::shared_ptr<Node> const &v) {
-        return v->job_predecessor.expired() || u->start + u->duration >= v->job_predecessor.lock()->start + v->job_predecessor.lock()->duration;
+        return v->jobPredecessor.expired() || u->start + u->duration >= v->jobPredecessor.lock()->start + v->jobPredecessor.lock()->duration;
     }
-    inline static bool compareNeighbours(Neighbour const &n1, Neighbour const &n2) {
+    inline static bool compNeighboursByMakespan(Neighbour const &n1, Neighbour const &n2) {
         return n1.makespan < n2.makespan;
     }
-    inline static bool sort_end_nodes(std::shared_ptr<Node> const &rhs, std::shared_ptr<Node> const &lhs) {
+    inline static bool compNodesByEndTime(std::shared_ptr<Node> const &rhs, std::shared_ptr<Node> const &lhs) {
         return rhs->start + rhs->duration > lhs->start + lhs->duration;
     }
 
