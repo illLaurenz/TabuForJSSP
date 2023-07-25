@@ -20,10 +20,15 @@ struct TabuListItem {
     }
 };
 
+enum SwapDirection {forward, backward, adjacent};
+
 struct Neighbour {
     vector<int> sequence;
     int machine;
     int makespan;
+    int start_pos;
+    int end_pos;
+    SwapDirection swap;
 };
 
 struct Node {
@@ -64,7 +69,6 @@ private:
     Solution bestSolution;
     int new_makespan = 0;
     vector<vector<std::shared_ptr<Node>>> disjunctive_graph;
-    vector<vector<std::shared_ptr<Node>>> new_disjunctive_graph;
     vector<TabuListItem> tabuList;
     std::mt19937 rng;
 

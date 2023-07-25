@@ -109,9 +109,8 @@ vector<vector<std::shared_ptr<Node>>> TabuSearch::generateDisjunctiveGraph() con
                 auto node = std::make_shared<Node>(Node{job_predecessor, machine_predecessor, nullptr, nullptr, machine, job, start, duration, 0});
                 if (job_predecessor) {
                     _disjunctive_graph[job].back()->job_successor = node;
-                    _disjunctive_graph[job].back() = node;
-                } else {
                     _disjunctive_graph[job].emplace_back(node);
+                } else {
                     _disjunctive_graph[job].emplace_back(node);
                 }
                 if (machine_predecessor) {
@@ -311,8 +310,8 @@ Neighbour TabuSearch::forwardSwap(vector<int> sequence, int const start_index, i
     for (int i = 0; i < size; i++) {
         approx_makespan = std::max(approx_makespan, len_to_i[i] + len_from_i[i]);
     }
-
-    return {sequence, machine, approx_makespan};
+    if (v - u == 1) return {sequence, machine, approx_makespan, start_index + u, start_index+ v, adjacent};
+    return {sequence, machine, approx_makespan, start_index + u, start_index+ v, forward};
 }
 
 Neighbour TabuSearch::backwardSwap(vector<int> sequence, int const start_index, int const u, int const v, int const machine, vector<std::shared_ptr<Node>> const &block) {
@@ -373,7 +372,8 @@ Neighbour TabuSearch::backwardSwap(vector<int> sequence, int const start_index, 
     for (int i = 0; i < size; i++) {
         approx_makespan = std::max(approx_makespan, len_to_i[i] + len_from_i[i]);
     }
-    return {sequence, machine, approx_makespan};
+    if (v - u == 1) return {sequence, machine, approx_makespan, start_index + u, start_index + v, adjacent};
+    return {sequence, machine, approx_makespan, start_index + u, start_index + v, backward};
 }
 
 // the tabu move. sort neighbourhood by approximated makespan, check for aspiration, or take best non tabu solution
@@ -417,80 +417,73 @@ bool TabuSearch::tsMove(vector<Neighbour> &neighbourhood) {
 
 void TabuSearch::updateCurrentSolution(Neighbour &neighbour) {
     // find first operation of the machine which is altered
-    std::shared_ptr<Node> oldMachine;
-    for (auto &job: disjunctive_graph) {
-        std::shared_ptr<Node> * node = &job.front();
-        while ((*node) != nullptr) {
-            if ((*node)->machine == neighbour.machine && (*node)->mach_predecessor.expired()) {
-                oldMachine = (*node);
-            }
-            node = &(*node)->job_successor;
-        }
+    std::shared_ptr<Node> n1, n2;
+    int job_n1 = currentSolution.solution[neighbour.machine][neighbour.start_pos];
+    for (auto &node: disjunctive_graph[job_n1]) {
+        if (node->machine == neighbour.machine) n1 = node;
     }
-    // create sequence of new nodes for the new machine
-    auto null_node = std::shared_ptr<Node>();
-    auto &last = null_node;
-    vector<std::shared_ptr<Node>> newNodes = vector<std::shared_ptr<Node>>();
-    for (auto jobNo: neighbour.sequence) {
-        last = std::make_shared<Node>(Node{null_node, last, nullptr, nullptr, neighbour.machine, jobNo, -1, -1, 0});
-        newNodes.emplace_back(last);
+
+    int job_n2 = currentSolution.solution[neighbour.machine][neighbour.end_pos];
+    for (auto &node: disjunctive_graph[job_n2]) {
+        if (node->machine == neighbour.machine) n2 = node;
     }
-    // rearrange pointers to new sequence
-    auto *oldNode = &oldMachine;
-    while ((*oldNode) != nullptr) {
-        for (auto &newNode: newNodes) {
-            if (newNode->job == (*oldNode)->job) {
-                newNode->duration = (*oldNode)->duration;
-                newNode->job_predecessor = (*oldNode)->job_predecessor;
-                newNode->job_successor = (*oldNode)->job_successor;
-                if (!(*oldNode)->job_predecessor.expired()) (*oldNode)->job_predecessor.lock()->job_successor = newNode;
-                else disjunctive_graph[newNode->job][0] = newNode;
-                if ((*oldNode)->job_successor != nullptr) (*oldNode)->job_successor->job_predecessor = newNode;
-                else disjunctive_graph[newNode->job][1] = newNode;
-                break;
-            }
-        }
-        oldNode = &(*oldNode)->mach_successor;
+
+    // execute swap move: rearrange pointers
+    if (neighbour.swap == forward) {
+        auto buff_mp = n1->mach_predecessor.expired() ? nullptr : n1->mach_predecessor.lock();
+        auto buff_ms = n1->mach_successor;
+        n1->mach_predecessor = n2;
+        n1->mach_successor = n2->mach_successor;
+        if (n1->mach_successor) n1->mach_successor->mach_predecessor = n1;
+        n2->mach_successor = n1;
+
+        if (buff_mp) buff_mp->mach_successor = buff_ms;
+        if (buff_ms) buff_ms->mach_predecessor = buff_mp;
+    } else if (neighbour.swap == backward){
+        auto buff_mp = n2->mach_predecessor.expired() ? nullptr : n2->mach_predecessor.lock();
+        auto buff_ms = n2->mach_successor;
+        n2->mach_predecessor = n1->mach_predecessor;
+        n2->mach_successor = n1;
+        if (!n2->mach_predecessor.expired()) n2->mach_predecessor.lock()->mach_successor = n2;
+        n1->mach_predecessor = n2;
+
+        if (buff_mp) buff_mp->mach_successor = buff_ms;
+        if (buff_ms) buff_ms->mach_predecessor = buff_mp;
+    } else {
+        auto buff_mp = n1->mach_predecessor.expired() ? nullptr : n1->mach_predecessor.lock();
+        n1->mach_successor = n2->mach_successor;
+        if (n1->mach_successor) n1->mach_successor->mach_predecessor = n1;
+        n1->mach_predecessor = n2;
+
+        n2->mach_predecessor = buff_mp;
+        n2->mach_successor = n1;
+        if (buff_mp) buff_mp->mach_successor = n2;
     }
-    // set machine successors
-    null_node = std::shared_ptr<Node>();
-    std::shared_ptr<Node> *p_last = &null_node;
-    for (auto it = newNodes.rbegin(); it != newNodes.rend(); it++) {
-        (*it)->mach_successor = (*p_last);
-        p_last = &(*it);
-    }
-    // reset all longest paths to dummy end node
-    for (auto &job: disjunctive_graph) {
-        std::shared_ptr<Node> *node = &job.front();
-        while ((*node) != nullptr) {
-            (*node)->len_to_n = 0;
-            node = &(*node)->job_successor;
-        }
-    }
+
     // leftshift / recalculate starting times
-    vector<std::shared_ptr<Node> *> startNodes = vector<std::shared_ptr<Node> *>();
+    // reset all longest paths to dummy end node
+    vector<std::shared_ptr<Node>> startNodes = vector<std::shared_ptr<Node>>();
     startNodes.reserve(2 * instance.machineCount * instance.jobCount);
     for (auto &job: disjunctive_graph) {
-        auto *node = &job.front();
-        if ((*node)->mach_predecessor.expired()) startNodes.emplace_back(node);
-        while ((*node) != nullptr) {
-            (*node)->start = 0;
-            node = &(*node)->job_successor;
+        if (job.front()->mach_predecessor.expired()) startNodes.emplace_back(job.front());
+        for (auto &node: job) {
+            node->len_to_n = 0;
+            node->start = 0;
         }
     }
     long long pos = 0;
     while (pos < startNodes.size()) {
-        auto &node = *startNodes[pos];
+        auto &node = startNodes[pos];
         auto &ms = node->mach_successor;
         auto &js = node->job_successor;
         auto end = node->start + node->duration;
         if (ms && ms->start < end) {
             ms->start = end;
-            startNodes.emplace_back(&ms);
+            startNodes.emplace_back(ms);
         }
         if (js && js->start < end) {
             js->start = end;
-            startNodes.emplace_back(&js);
+            startNodes.emplace_back(js);
         }
         ++pos;
     }
@@ -541,20 +534,8 @@ void TabuSearch::updateTabuList(const Neighbour &neighbour) {
     int tenture_max = std::max((neighbour.makespan - bestSolution.makespan) / d1, d2);
     std::uniform_int_distribution<std::mt19937::result_type> dist(0,tenture_max);
     int tenure = tt + dist(rng);
-    vector<int> indices, jobs;
-    // save difference on block machine as TabuListItem
-    int start_index = -1, end_index = -1;
-    for (int i = 0; i < neighbour.sequence.size(); i++) {
-        auto neighbour_op = neighbour.sequence[i];
-        auto sol_op = currentSolution.solution[neighbour.machine][i];
-        if (neighbour_op != sol_op && start_index == -1) {
-            start_index = i;
-            end_index = i;
-        } else if (neighbour_op != sol_op) {
-            end_index = i;
-        }
-    }
-    for (int i = start_index; i <= end_index; i++) {
+    vector<int> indices;
+    for (int i = neighbour.start_pos; i <= neighbour.end_pos; i++) {
         indices.emplace_back(i);
     }
 

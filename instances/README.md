@@ -16,12 +16,12 @@ They come in two formats. The one i use is the standart format which is present 
 
 #### Standart format: 
 
-In the first row the first represents the number of jobs and the second number the number of machines. Each following row represents one job. Therefor the numbers represent tuples as (machine number, time operation) so the order of the tuples represent the order in which the job has to be passed though the machines. The machine number starts at 0. The numbers are seperated by a tab symbol.
+In the first row the first represents the number of sequence and the second number the number of machines. Each following row represents one job. Therefor the numbers represent tuples as (machine number, time operation) so the order of the tuples represent the order in which the job has to be passed though the machines. The machine number starts at 0. The numbers are seperated by a tab symbol.
 
 
 #### Taillard specification: 
 
-"On the first line are two numbers, the first is the number of jobs and the second the number of machines. Following there are two matrice the first with a line for each job containing the processor times for each operation the second with the order for visiting the machines. The numbering of the machines starts at 1.
+"On the first line are two numbers, the first is the number of sequence and the second the number of machines. Following there are two matrice the first with a line for each job containing the processor times for each operation the second with the order for visiting the machines. The numbering of the machines starts at 1.
 
 For example the same instance as above would be presented as:
 
