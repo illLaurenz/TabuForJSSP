@@ -2,12 +2,21 @@
 #include <algorithm>
 #include <queue>
 
+/**
+ * internal function for logging the makespan
+ * @param makespan
+ */
 void TabuSearch::logMakespan(int makespan) {
     std::chrono::duration<double> elapsed_seconds = (std::chrono::system_clock::now() - startTime);
     makespanHistory.emplace_back(std::tuple{elapsed_seconds.count(), makespan});
 }
 
-// main method: resets algo vars and starts loop
+/**
+ * iteration constrained tabu search
+ * @param solution starting solution
+ * @param max_iterations
+ * @return solution struct: tabular solution, makespan
+ */
 Solution TabuSearch::optimize_it(Solution &solution, long max_iterations) {
     tabuList.reset();
     currentSolution = solution;
@@ -25,7 +34,13 @@ Solution TabuSearch::optimize_it(Solution &solution, long max_iterations) {
     return bestSolution;
 }
 
-// main method: resets algo vars and starts loop
+/**
+ * time constrained tabu search
+ * @param solution starting solution
+ * @param seconds maximum runtime, soft limit
+ * @param known_optimum best known solution / lower bound for early stop when found
+ * @return BMResult struct: solution, makespan, history (solution - time log)
+ */
 BMResult TabuSearch::optimize(Solution &solution, int seconds, int known_optimum) {
     startTime = std::chrono::system_clock::now();
     makespanHistory = vector<std::tuple<double,int>>();
@@ -49,8 +64,10 @@ BMResult TabuSearch::optimize(Solution &solution, int seconds, int known_optimum
     return BMResult{bestSolution.solution, bestSolution.makespan, makespanHistory};
 }
 
-// generates N7 like neighbourhood, with the difference that cyclic solutions are accepted and fixed
-// more computational overhead than in the paper
+/**
+ * create a N7 neighbourhood with approximated makespans for current solution
+ * @return neighbourhood
+ */
 vector<Neighbour> TabuSearch::generateNeighbourhood() {
     calcLongestPaths(disjunctiveGraph);
     auto longest_path = findLongestPath(disjunctiveGraph);
@@ -64,9 +81,15 @@ vector<Neighbour> TabuSearch::generateNeighbourhood() {
     return neighbourhood;
 }
 
-void TabuSearch::calcLongestPaths(vector<vector<std::shared_ptr<Node>>> &disjunctive_graph) const {
+/**
+ * sets len_to_n for each node in the disjunctive graph.
+ * they are used to find the longest path, create a feasible N7 neighbourhood and approximate the makespan of each
+ * neighbour. See Zhang et al. for details, linked in README.md
+ * @param d_graph the disjunctive graph
+ */
+void TabuSearch::calcLongestPaths(vector<vector<std::shared_ptr<Node>>> &d_graph) const {
     auto end_nodes = vector<std::shared_ptr<Node>>();
-    for (auto &job: disjunctive_graph) {
+    for (auto &job: d_graph) {
         if (job.back()->machSuccessor == nullptr) {
             end_nodes.emplace_back(job.back());
         }
@@ -78,6 +101,11 @@ void TabuSearch::calcLongestPaths(vector<vector<std::shared_ptr<Node>>> &disjunc
     }
 }
 
+/**
+ * recursive function for the len_to_n calculation. see TabuSearch::calcLongestPaths
+ * recursive calculation is started at the node with the largest starting time, so each node is visited only once.
+ * @param node the current node
+ */
 void TabuSearch::recursiveLongestPathCalculation(std::shared_ptr<Node> const &node) const {
     if (!node->machPredecessor.expired()) {
         auto mp = node->machPredecessor.lock();
@@ -96,6 +124,11 @@ void TabuSearch::recursiveLongestPathCalculation(std::shared_ptr<Node> const &no
 
 }
 
+/**
+ * use len_to_n of the disjunctive graph to find a longest path in the instance
+ * @param d_graph the disjunctive graph
+ * @return a longest path of the disjunctive graph
+ */
 vector<std::shared_ptr<Node>> TabuSearch::findLongestPath(const vector<vector<std::shared_ptr<Node>>>& d_graph) const {
     std::shared_ptr<Node> start_node;
     for (auto const &job: d_graph) {
@@ -123,6 +156,12 @@ vector<std::shared_ptr<Node>> TabuSearch::findLongestPath(const vector<vector<st
     return longest_path;
 }
 
+/**
+ * generate neighbourhood blocks of the longest path, to create a neighbourhood from it.
+ * block: operations of the longest path, which are consecutive on the same machine
+ * @param longest_path see TabuSearch::findLongestPath
+ * @return vector of blocks
+ */
 vector<vector<std::shared_ptr<Node>>> TabuSearch::generateBlockList(vector<std::shared_ptr<Node>> const &longest_path) {
     auto block_list = vector<vector<std::shared_ptr<Node>>>();
     auto block = vector<std::shared_ptr<Node>>();
@@ -142,6 +181,11 @@ vector<vector<std::shared_ptr<Node>>> TabuSearch::generateBlockList(vector<std::
     return block_list;
 }
 
+/**
+ * test if N7 swap results in a feasible solution, add machine sequence as neighbour and approximate makespan
+ * @param block see TabuSearch::generateBlockList
+ * @return a list of legal neighbours with approximated makespans
+ */
 vector<Neighbour> TabuSearch::generateNeighboursFromBlock(vector<std::shared_ptr<Node>> const &block) const {
     auto neighbours = vector<Neighbour>();
     int machine_no = block.front()->machine;
@@ -179,6 +223,16 @@ vector<Neighbour> TabuSearch::generateNeighboursFromBlock(vector<std::shared_ptr
     return neighbours;
 }
 
+/**
+ * approximate makespan for a forward swap on a block of the current solution
+ * @param sequence
+ * @param start_index
+ * @param u
+ * @param v
+ * @param machine
+ * @param block
+ * @return
+ */
 Neighbour TabuSearch::forwardSwap(vector<int> sequence, int const start_index, int const u, int const v, int const machine, vector<std::shared_ptr<Node>> const &block) {
     int item_u = sequence[start_index + u];
     sequence.erase(sequence.begin() + start_index + u);
