@@ -224,14 +224,15 @@ vector<Neighbour> TabuSearch::generateNeighboursFromBlock(vector<std::shared_ptr
 }
 
 /**
- * approximate makespan for a forward swap on a block of the current solution
- * @param sequence
- * @param start_index
- * @param u
- * @param v
+ * swap operation from u to v in the block and approximate makespan
+ * for details see E. Balas and A. Vazacopoulos, linked in README.md
+ * @param sequence machine sequence in current solution
+ * @param start_index of the block
+ * @param u operation to swap
+ * @param v target position
  * @param machine
  * @param block
- * @return
+ * @return Neighbour with approximated makespan
  */
 Neighbour TabuSearch::forwardSwap(vector<int> sequence, int const start_index, int const u, int const v, int const machine, vector<std::shared_ptr<Node>> const &block) {
     int item_u = sequence[start_index + u];
@@ -299,6 +300,17 @@ Neighbour TabuSearch::forwardSwap(vector<int> sequence, int const start_index, i
     return {sequence, machine, approx_makespan, start_index + u, start_index+ v, swap_direction};
 }
 
+/**
+ * swap operation from v to u in the block and approximate makespan
+ * for details see E. Balas and A. Vazacopoulos, linked in README.md
+ * @param sequence machine sequence in current solution
+ * @param start_index of the block
+ * @param u target position
+ * @param v operation to swap
+ * @param machine
+ * @param block
+ * @return Neighbour with approximated makespan
+ */
 Neighbour TabuSearch::backwardSwap(vector<int> sequence, int const start_index, int const u, int const v, int const machine, vector<std::shared_ptr<Node>> const &block) {
     int v_item = sequence[start_index + v];
     sequence.erase(sequence.begin() + start_index + v);
@@ -365,6 +377,12 @@ Neighbour TabuSearch::backwardSwap(vector<int> sequence, int const start_index, 
 // the tabu move. sort neighbourhood by approximated makespan, check for aspiration, or take best non tabu solution
 // then calculate for exact makespan, if aspiration, check aspiration and tabu again
 // if neither, choose random
+/**
+ * select best solution of the neighbourhood as next current solution. exclude tabu solutions if aspiration criterion
+ * is not fulfilled
+ * @param neighbourhood
+ * @return if the new current solution is better than the current one
+ */
 bool TabuSearch::tsMove(vector<Neighbour> &neighbourhood) {
     if (neighbourhood.empty()) {
         return false;
@@ -401,6 +419,10 @@ bool TabuSearch::tsMove(vector<Neighbour> &neighbourhood) {
     return false;
 }
 
+/**
+ * changes the disjunctive graph to the new current solution selected by TabuSearch::tsMove
+ * @param neighbour
+ */
 void TabuSearch::updateCurrentSolution(Neighbour &neighbour) {
     // find first operation of the machine which is altered
     std::shared_ptr<Node> node1, node2;
@@ -480,6 +502,10 @@ void TabuSearch::updateCurrentSolution(Neighbour &neighbour) {
     currentSolution.makespan = makespan;
 }
 
+/**
+ * generates the disjunctive graph at the start of the optimization
+ * @return disjunctive graph
+ */
 vector<vector<std::shared_ptr<Node>>> TabuSearch::generateDisjunctiveGraph() const {
     auto makespan_machine = vector<int>(instance.machineCount);
     auto sol_ptr = vector<int>(instance.machineCount);
