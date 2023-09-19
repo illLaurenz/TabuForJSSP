@@ -225,7 +225,7 @@ Solution JSSPInstance::generateRandomSolution() {
     for (int m = 0; m < machineCount; m++) {
         solution.emplace_back(randJobList(jobCount));
     }
-    auto makespann = calcMakespanAndFixSolution(solution);
+    auto makespan = calcMakespanAndFixSolution(solution);
 
-    return {solution, makespann};
+    return {solution, makespan};
 }
