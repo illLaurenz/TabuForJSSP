@@ -42,6 +42,6 @@ PYBIND11_MODULE(metaheuristic, m) {
             .def("optimize", &TabuSearch::optimize);
     py::class_<MemeticAlgorithm>(m,"MemeticAlgorithm")
             .def(py::init<JSSPInstance &, int, int>())
-            .def("optimize", &MemeticAlgorithm::optimize_pop)
+            .def("optimize", &MemeticAlgorithm::optimizePopulation)
             .def("optimize", &MemeticAlgorithm::optimize);
 }
