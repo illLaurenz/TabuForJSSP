@@ -4,6 +4,9 @@
 #include <algorithm>
 #include "ts.h"
 
+/**
+ * internal struct for managing the tabu solutions in tabu search
+ */
 struct TabuListItem {
     int tabuTenure;
     int machine;
@@ -19,16 +22,21 @@ struct TabuListItem {
     }
 };
 
-
+/**
+ * internal class for managing the tabu list in tabu search
+ * tabu list contains sequence the block of sequence (with indices) which were deciding for the move
+ */
 class TabuList {
 public:
     explicit TabuList(JSSPInstance &instance):
             tabuListSize(calcTabuListSize(instance)), tabuList(vector<TabuListItem>()), rng(instance.getSeed()) {};
-
-     bool isTabu(Neighbour const &neighbour) {
-         // checks the given solution against the tabu list.
-         // tabu list contains sequence the block of sequence (with indices) which were deciding for the move
-         for (auto const &tabu: tabuList) {
+    /**
+     * checks the given solution against the tabu list.
+     * @param neighbour
+     * @return true if the solution is tabu
+     */
+    bool isTabu(Neighbour const &neighbour) {
+        for (auto const &tabu: tabuList) {
             if (neighbour.machine != tabu.machine) continue;
             bool isTabu = true;
             for (auto i = tabu.start_index; i <= tabu.end_index; i++) {
@@ -40,9 +48,13 @@ public:
         }
         return false;
     }
-
+    /**
+     * updates tabu list after a tabu move
+     * @param neighbour to prohibit
+     * @param bestMakespan required for tenure calculation
+     * (tenure := number iterations the solution stays tabu)
+     */
     void updateTabuList(Neighbour const &neighbour, int bestMakespan) {
-        // updates tabu list after a tabu move
         TabuListItem smallest = TabuListItem{INT32_MAX};
         int next = 0;
         while (next < tabuList.size()) {
@@ -66,9 +78,12 @@ public:
 
         tabuList.emplace_back(TabuListItem{tenure, neighbour.machine, ++tabuId, neighbour.startIndex, neighbour.endIndex, neighbour.sequence});
     }
-
+    /**
+     * calc the size of the tabu list based on job and machine count, formula by Zhang et al.
+     * @param instance
+     * @return the calculated size
+     */
     int calcTabuListSize(JSSPInstance &instance) {
-        // calc the size of the tabu list based on job and machine count
         double min = 10 + double(instance.jobCount) / instance.machineCount;
         double max;
         if (instance.machineCount * 2 > instance.jobCount) {
@@ -79,7 +94,9 @@ public:
         std::uniform_real_distribution<> dist(0,1);
         return std::ceil(dist(rng) * (max - min) + min);
     }
-
+    /**
+     * reset the tabu list to initial state
+     */
     void reset() {
          tabuList.clear();
          tabuId = 0;
@@ -90,7 +107,7 @@ private:
     const unsigned int tabuListSize;
     std::mt19937 rng;
     int tabuId = 0;
-    // constants
+    // constants, see Zhang et al.
     const int tt = 2, d1 = 5, d2 = 12;
 };
 

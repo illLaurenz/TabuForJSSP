@@ -68,24 +68,37 @@ private:
     // log new best makespan and time while running
     void logMakespan(int makespan);
 
+    // generate the initial disjunctive graph
     [[nodiscard]] vector<vector<std::shared_ptr<Node>>> generateDisjunctiveGraph() const;
 
+    // update the disjunctive graph to the neighbouring solution
+    void updateCurrentSolution(Neighbour &neighbour);
+
+    // find the longest path in the graph, values are precalculated in calcLongestPaths
     [[nodiscard]] vector<std::shared_ptr<Node>> findLongestPath(const vector<vector<std::shared_ptr<Node>>>& disjunctive_graph) const;
 
+    // calc the len to n for each operation, so the longest path to the finishing operation
     void calcLongestPaths(vector<vector<std::shared_ptr<Node>>> &disjunctive_graph) const;
 
+    // recursive DSF for calcLongestPaths
     void recursiveLongestPathCalculation(const std::shared_ptr<Node>& node) const;
 
+    // preprocess the longest path to identify the blocks for a swap move, to generate neighbouring solutions
     [[nodiscard]] static vector<vector<std::shared_ptr<Node>>> generateBlockList(const vector<std::shared_ptr<Node>> &longest_path) ;
 
+    // use a block of the longest path to generate neighbouring solutions
     [[nodiscard]] vector<Neighbour> generateNeighboursFromBlock(const vector<std::shared_ptr<Node>> &block) const;
 
+    // swap an operation forward in its block and estimate the makespan, to create a new neighbouring solution
     Neighbour static forwardSwap(vector<int> sequence, int start_index, int u, int v, int machine, vector<std::shared_ptr<Node>> const &block);
+    // swap an operation backward in its block and estimate the makespan, to create a new neighbouring solution
     Neighbour static backwardSwap(vector<int> sequence, int start_index, int u, int v, int machine, vector<std::shared_ptr<Node>> const &block);
 
+    // check if two operations in a block can be swapped, used in generateNeighboursFromBlock
     inline static bool checkForwardSwap(std::shared_ptr<Node> const &u, std::shared_ptr<Node> const &v) {
         return !u->jobSuccessor || v->lenToN + v->duration >= u->jobSuccessor->lenToN + u->jobSuccessor->duration;
     }
+    // check if two operations in a block can be swapped, used in generateNeighboursFromBlock
     inline static bool checkBackwardSwap(std::shared_ptr<Node> const &u, std::shared_ptr<Node> const &v) {
         return v->jobPredecessor.expired() || u->start + u->duration >= v->jobPredecessor.lock()->start + v->jobPredecessor.lock()->duration;
     }
@@ -95,8 +108,6 @@ private:
     inline static bool compNodesByEndTime(std::shared_ptr<Node> const &rhs, std::shared_ptr<Node> const &lhs) {
         return rhs->start + rhs->duration > lhs->start + lhs->duration;
     }
-
-    void updateCurrentSolution(Neighbour &neighbour);
 };
 
 
