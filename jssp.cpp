@@ -4,7 +4,12 @@
 #include <algorithm>
 #include <random>
 
-
+/**
+ * read in an instance in standard format described in instances/README.md
+ * @warning: bad formatted instances will cause undefined behavior
+ * @param filename
+ * @return the parsed instance as 2D operations vector
+ */
 vector<vector<Operation>> JSSPInstance::readInstance(string &filename) {
     vector<vector<Operation>> instance = vector<vector<Operation>>();
 
@@ -36,7 +41,12 @@ vector<vector<Operation>> JSSPInstance::readInstance(string &filename) {
     file.close();
     return instance;
 }
-
+/**
+ * depricated method for reading in solutions in standard format as described in instances/README.md
+ * @warning: infeasible or bad encoded solutions will cause undefined behavior
+ * @param filename
+ * @return parsed solution
+ */
 Solution JSSPInstance::readSolution(string &filename) {
     std::ifstream file(filename);
     string line;
@@ -58,6 +68,12 @@ Solution JSSPInstance::readSolution(string &filename) {
     return {solution, calcMakespan(solution)};
 }
 
+/**
+ * calculate the exact makespan for a solution of this instance
+ * @warning: infeasible solutions will cause undefined behavior
+ * @param solution
+ * @return
+ */
 int JSSPInstance::calcMakespan(vector<vector<int>> const &solution) const {
     vector<int> makespan_machine = vector<int>(solution.size());
     vector<int> sol_ptr = vector<int>(solution.size());
@@ -83,6 +99,13 @@ int JSSPInstance::calcMakespan(vector<vector<int>> const &solution) const {
     return *std::max_element(makespan_machine.begin(), makespan_machine.end());
 }
 
+/**
+ * calculate the exact makespan for a solution of this instance
+ * warning: infeasible solutions will be altered to be feasible
+ * @param solution
+ * @param _seed random generator seed
+ * @return makespan of solution
+ */
 int JSSPInstance::calcMakespanAndFixSolution(vector<vector<int>>& solution, unsigned int _seed) const {
     vector<int> makespan_machine = vector<int>(solution.size());
     vector<int> sol_ptr = vector<int>(solution.size());
@@ -123,6 +146,10 @@ int JSSPInstance::calcMakespanAndFixSolution(vector<vector<int>>& solution, unsi
     return *std::max_element(makespan_machine.begin(), makespan_machine.end());
 }
 
+/**
+ * calc operation count of the instance
+ * @return operation count
+ */
 int JSSPInstance::operationCount() const{
     int op_count = 0;
     for (auto &job: instance) {
@@ -131,6 +158,14 @@ int JSSPInstance::operationCount() const{
     return op_count;
 }
 
+/**
+ * internal helper function for calcMakespanAndFixSolution. Is called when a solution is identified as infeasible
+ * and selects a random ready operation to be scheduled next
+ * @param solution
+ * @param sol_ptr
+ * @param job_ptr
+ * @param local_rnd
+ */
 void JSSPInstance::recover_soulution(vector<vector<int>> &solution, vector<int> &sol_ptr, vector<int> &job_ptr, std::mt19937 &local_rnd) const {
     vector<int> open_jobs = vector<int>();
     for (int i = 0; i < job_ptr.size(); i++) {
@@ -147,6 +182,11 @@ void JSSPInstance::recover_soulution(vector<vector<int>> &solution, vector<int> 
     solution[op.machine].emplace(new_position, op.job);
 }
 
+/**
+ * read job and machine count from a standard instance file. See instances/README.md
+ * @param filename
+ * @return tuple: number of jobs, number of machines
+ */
 std::tuple<int, int> JSSPInstance::readMetrics(string &filename) {
     std::ifstream file(filename);
     string line = "";
@@ -161,6 +201,11 @@ std::tuple<int, int> JSSPInstance::readMetrics(string &filename) {
     return {jobs, machines};
 }
 
+/**
+ * randomly distributes the jobs over a machine
+ * @param size
+ * @return a random machine sequence / job list
+ */
 vector<int> JSSPInstance::randJobList(int size) {
     vector<int> joblist = vector<int>();
     for (int i = 0; i < size; i++) joblist.emplace_back(i);
@@ -170,6 +215,10 @@ vector<int> JSSPInstance::randJobList(int size) {
     return joblist;
 }
 
+/**
+ * generates a random solution, not (semi-) active
+ * @return a random solution
+ */
 Solution JSSPInstance::generateRandomSolution() {
 
     auto solution = vector<vector<int>>();

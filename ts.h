@@ -7,7 +7,9 @@
 #include "jssp.h"
 
 enum SwapDirection {forward, backward, adjacent};
-
+/**
+ * internal struct for managing the neighbouring solutions
+ */
 struct Neighbour {
     vector<int> sequence;
     int machine;
@@ -16,7 +18,9 @@ struct Neighbour {
     int endIndex;
     SwapDirection swap;
 };
-
+/**
+ * internal struct for managing the operations in the disjunctive graph
+ */
 struct Node {
     std::weak_ptr<Node> jobPredecessor;
     std::weak_ptr<Node> machPredecessor;

@@ -10,17 +10,24 @@
 using std::vector;
 using std::string;
 
+/**
+ * internal struct for managing the operations inside the instance class
+ */
 struct Operation {
     int machine;
     int duration;
     int job;
 };
-// intern solution struct
+/**
+ * struct for managing solutions
+ */
 struct Solution {
     vector<vector<int>> solution;
     int makespan;
 };
-// Solution struct containing solution history of the algorithm
+/**
+ * Solution struct containing solution history of the algorithm. Designated for benchmarking
+ */
 struct BMResult {
     vector<vector<int>> solution;
     int makespan;
