@@ -34,9 +34,13 @@ private:
     // logging intermediate makespans while running
     vector<std::tuple<double, int>> makespanHistory;
 
+    // rng module
     std::mt19937 rng;
+    // starting time for logging
     std::chrono::time_point<std::chrono::system_clock> tStart;
+    // population for the memetic algorithm
     vector<Solution> population;
+    // current best solution
     Solution currentBest;
 
     // main algorithm loop, called by both optimize and optimizePopulation
@@ -67,14 +71,17 @@ private:
         return qualityScoreBeta * A(max_makespan, min_makespan, makespan) + (1 - qualityScoreBeta) * A(max_similarity, min_similarity, similarity_degree);
     };
 
+    // normalization function for score calculation
     inline static float A(int max, int min, int value) {
         return static_cast<float>(max - value) / static_cast<float>(max - min + 1);
     };
 
+    // sorting function for population scoring
     static inline bool byQuality(std::tuple<float,int> t1, std::tuple<float,int> t2) {
         return std::get<0>(t1) < std::get<0>(t2);
     };
 
+    // sorting function
     static inline bool byMakespanDecs(Solution const &a, Solution const &b) {
         return a.makespan < b.makespan;
     }
