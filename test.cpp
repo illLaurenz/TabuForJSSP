@@ -8,7 +8,7 @@ using namespace std::chrono;
 using std::cout, std::endl;
 
 void memTest() {
-    string instance_name = "../../../../data/instances/abz_instances/abz5.txt";
+    string instance_name = "../instances/abz_instances/abz5.txt";
     string solution_name = "../test_files/spt_abz5.txt";
 
     //JSSPInstance instance = JSSPInstance(instance_name,1234);
@@ -53,8 +53,8 @@ void tabuTest() {
 
 int main() {
     auto t_start = std::chrono::system_clock::now();
-    for (int i = 0; i < 10; i++)
-        tabuTest();
+    for (int i = 0; i < 3; i++)
+        memTest();
 
     std::chrono::duration<double> elapsed_seconds = (std::chrono::system_clock::now() - t_start);
     cout << elapsed_seconds.count();
