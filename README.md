@@ -47,10 +47,75 @@ But please mind; I do all of this in my free time.
 
 ## Guide
 Two chapter. Usage if you don't care about the implementation, implementation details if you want to understand
-how it works. I recommend reading both before looking into the source code.
+how it works. I recommend reading both before looking into the source code. More complex parts of the algorithm 
+have references in the code to the paper which explains the part. 
+
 ### Usage
+#### Tabu search
+1. Initiate an instance of JSSPInstance (ji) with the path to the instance file as parameter (see jssp.cpp/.h)
+2. Initiate a TabuSearch instance (ts) with the JSSPInstance as parameter (see ts.cpp/.h)
+3. Create an initial solution with ji.generateRandomSolution()
+4. Start optimization with ts.optimize() with the initial solution and a time limit (seconds) as parameter 
+5. (4.) solves the instance and returns a Solution struct with the makespan, the solution as list of machine sequences
+   and a list of the intermediate solution values with timestamps 
+
+#### Memetic algorithm
+1. Initiate an instance of JSSPInstance with the path to the instance file as parameter (see jssp.cpp/.h)
+2. Initiate an instance of MemeticAlgorithm (mem) with the JSSPInstance as parameter
+3. Start optimization with mem.optimize() with a time limit (seconds) as parameter
+4. (3.) solves the instance and returns a Benchmark struct with the makespan, the solution as list of machine sequences
+and a list of the intermediate solution values with timestamps
+
+#### Additional hints
+- Time limits are soft time limits. The algorithm will finish the current iteration and return afterwards if the time limit
+is reached. This gets relevant especially on large instances. MemeticAlgorithm will also finish initialization, even if 
+the time limit is reached earlier. 
+- Both algorithms offer an iteration constraint optimization method. In this method the algorithm does not log.
+- Tabu search can be started with any feasible starting solution.
+- Memetic algorithm also offers the possibility to give starting solutions with optimizePopulation()
 
 ### Implementation details
+#### JSSPInstance (jssp.cpp/.h)
+Utility class around the jssp instance. Provides structs Solution and BMResults for algorithm outputs. JSSPInstance 
+can load and manage instances and also provides the random seed for the algorithms. All methods only work, if the instance
+was correctly initialized.
+
+#### Tabu search (ts.cpp/.h, tabu_list.h)
+The Tabu search algorithm inspired by Zhang et al. [1], so if you are interested in more details on JSSP and tabu search 
+on it, I strongly recommend reading their paper. Initialization takes an instance which provides the random seed,
+utility methods and the data of the instance to be solved. TabuList is an additional class which provides an interface
+to manage the tabu list, so prohibiting solution features, checking if a solution is prohibited and allowing solution
+features again. The optimization starts by setting parameters. In the main loop each iteration it generates 
+a neighbourhood so, a set of solutions which are similar to the current solution. These solutions have a change in the
+longest path of the current solution, so the sequence of operations which prevents the schedule to be shorter. 
+This is a good approach because the makespan can only be reduced by changing the longest path. Because we need to find 
+the longest path, it is pretty intuitive to manage the solution as graph. Therefore, the algorithm manages the current
+solution as a graph, called disjunctive graph. In it, each operation has an "edge" to the previous and next operation in 
+its job and in its machine. This disjunctive graph is a network graph, so we are able to find the longest path using 
+dynamic in a finite amount of time, unlike in a general graph, where the problem is NP-hard. Each operation is 
+represented as a Node struct. The initial solution is generated at the start of the algorithm and updated each iteration
+after the algorithm selected a neighbouring solution. The update reassembles the disjunctive graph so that the graph
+represents the neighbour. The algorithm selects the neighbour which has the best approximated makespan and is not tabu.
+If a neighbour has a better approximated makespan than the best makespan found, the makespan is calculated exact and if 
+it is truly better, the neighbour is the next solution no matter if it is tabu (aspiration criterion). If all solutions
+are tabu, a random is selected. 
+
+Overview:
+1. Create initial disjunctive graph
+2. Set parameters
+3. Each iteration:
+   1. Find longest path
+   2. Find neighbours by doing swaps on the longest path -> approximate makespans
+   3. Update the current solution to the best neighbour, update disjunctive graph
+   4. If new best solution -> check exact makespan, if truly better -> update bestSolution
+4. Time / iteration limit reached: return best solution
+
+The process of approximating the makespans of the neighbours is pretty complex and we need to calculate the "len to n"'s 
+in beforehand. "len to n" is so the longest path to a node which has no job- and machine-successor for each node of 
+the disjunctive graph. Calculating the "len to n"'s is the most expensive step in the algorithm, but is crucial to approximate
+makespans, which would be the most expensive task otherwise (and even more expensive of course).  
+
+#### Memetic algorithm
 
 ## Links
 
