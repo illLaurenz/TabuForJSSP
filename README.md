@@ -43,7 +43,7 @@ the OR Tools formulation by far. The Memetic algorithm performed okay, so I shar
 educational example. I will share some results, an implemented Google OR Tools CP-SAT formulation in Python,
 and a Python package in a repository on this profile in the future. If you have questions or problems file me
 an issue on this project and I will be glad to help you. If you have improvements, make a pull request. 
-But please mind; I do all of this in my free time.
+But please mind: **I do all of this in my free time.**
 
 ## Guide
 Two chapter. Usage if you don't care about the implementation, implementation details if you want to understand
@@ -73,6 +73,7 @@ the time limit is reached earlier.
 - Both algorithms offer an iteration constraint optimization method. In this method the algorithm does not log.
 - Tabu search can be started with any feasible starting solution.
 - Memetic algorithm also offers the possibility to give starting solutions with optimizePopulation()
+- Instances have to be in the format described in ./instances/README.md - the standard format from the OR-Library
 
 ### Implementation details
 #### JSSPInstance (jssp.cpp/.h)
@@ -116,6 +117,6 @@ the disjunctive graph. Calculating the "len to n"'s is the most expensive step i
 makespans, which would be the most expensive task otherwise (and even more expensive of course).  
 
 #### Memetic algorithm
-
+[TODO]
 ## Links
-
+[TODO]

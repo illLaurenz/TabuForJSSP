@@ -241,8 +241,9 @@ int MemeticAlgorithm::calcSimilarityDegree(int solution_index) {
 
 /**
  * calcs quality and similarity score for each solution and removes the worst two.
- * population size at start of the method is populationSize + 2, at the end populationSize
- * TODO: minimize score calculation overhead with dp
+ * population size at start of the method is populationSize + 2, at the end populationSize.
+ * you could save some time here by minimizing the score calculation overhead with dp but it is a minimal factor
+ * compared to the tabu search each iteration.
  */
 void MemeticAlgorithm::updatePopulation() {
     vector<std::tuple<float,int>> quality_list = vector<std::tuple<float,int>>();
