@@ -5,25 +5,44 @@ written by Laurenz, inspired by the work of Zhang et al. [1], Cheng et al. [2] a
 - JSSP : problem description
 - About : background of the project
 - Guide : dev guide
-- Links : link collection for reference and context
+- References : the referenced papers
 
 ## JSSP
 ###Problem definition
 The Job Shop Scheduling Problem (JSSP) is a classical NP-hard problem. Scheduling is the allocation of 
 resources to tasks (or operations) in a time based environment. The JSSP is the most well known problem 
 of the family of scheduling problems. The resources are called machines in this problem, time is expressed as 
-integer number and the operations have job dependencies.  A problem description in short: 
+integer number and the operations have job dependencies. A JSSP instance is therefore defined by a set of *n* jobs and 
+*m* machines. Each job has up to m operations and can visit each machine at most once. The algorithms in this repo can
+only process a more restrictive instance definition: all jobs have to visit each machine exactly once. Therefore, each
+instance has *nm* operations. 
+A problem description in short: 
 
 Given:
-- a set of jobs, consisting of a sequence of operations (duration, machine)
+- a set of *m* machines
+- a set of *n* jobs, consisting of a sequence of operations (duration, machine)
 
 Wanted:
 - a minimal schedule - a starting time has to be assigned to each operation
 
 Constraints:
-- each operation can be started, if the predecessing operation in its job is done processing 
-(starting time + duration = end time) 
+- each operation can be started, if the predecessing operation in its job is done processing
+  (starting time + duration = end time)
 - each machine can only process one operation at a time
+
+A schedule can also be seen as a timetable for each machine. 
+
+Example instance: *[Operations: (Machine, Duration)]*
+
+|   Job   |   Op 1    |   Op 2    |   Op 3    |  Color   |
+|:-------:|:---------:|:---------:|:---------:|:--------:|
+|  Job 1  |  (M1, 2)  |  (M2, 3)  |  (M3, 2)  |  orange  |
+|  Job 2  |  (M3, 2)  |  (M1, 3)  |  (M2, 2)  |   blue   |
+|  Job 3  |  (M2, 1)  |  (M3, 2)  |  (M1, 3)  |  green   |
+
+Example schedule:
+
+![img.png](ressources/schedule.png)
 
 ###Solution representation:
 As already mentioned: A solution assigns a starting times to each operation. So we can see a solution as a 2-dim array 
@@ -42,6 +61,18 @@ machine number. Its position in the machine sequence tells us which operations h
 started, and its position in its job visa versa. So when creating a schedule from our solution representation, we 
 simply go through the machine sequences check if the first unscheduled operation and schedule it if it has no pending 
 job dependency.
+
+Machine sequence solution:
+
+| Machine |  Op 1   |  Op 2   |  Op 3   |
+|:-------:|:-------:|:-------:|:-------:|
+|   M1    |  Job 1  |  Job 2  |  Job 3  |
+|   M2    |  Job 1  |  Job 3  |  Job 2  |
+|   M3    |  Job 2  |  Job 1  |  Job 3  |
+
+(Semi) active schedule:
+
+![img.png](ressources/semi-active-schedule.png)
 
 ## About
 I am a german computer scientist and wrote these algorithms in my bachelor thesis and improved and documented
@@ -96,7 +127,7 @@ the time limit is reached earlier.
 #### JSSPInstance (jssp.cpp/.h)
 Utility class around the jssp instance. Provides structs Solution and BMResults for algorithm outputs. JSSPInstance 
 can load and manage instances and also provides the random seed for the algorithms. All methods only work, if the instance
-was correctly initialized.
+was initialized correctly.
 
 #### Tabu search (ts.cpp/.h, tabu_list.h)
 The Tabu search algorithm inspired by Zhang et al. [1], so if you are interested in more details on JSSP and tabu search 
@@ -168,7 +199,7 @@ from the population and the next iteration starts.
    6. Remove the two worst solutions
 5. Return the best solution found
 
-## Links
+## References
 [1] `(Tabu search)` C. Zhang, P. Li, Z. Guan, and Y. Rao. A tabu search algorithm with a new neighborhood structure for the job shop scheduling problem. Computers & Operations
 Research, 34:3229–3242, 2007.
 
