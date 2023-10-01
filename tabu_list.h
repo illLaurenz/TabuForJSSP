@@ -30,6 +30,7 @@ class TabuList {
 public:
     explicit TabuList(JSSPInstance &instance):
             tabuListSize(calcTabuListSize(instance)), tabuList(vector<TabuListItem>()), rng(instance.getSeed()) {};
+
     /**
      * checks the given solution against the tabu list.
      * @param neighbour
@@ -48,6 +49,7 @@ public:
         }
         return false;
     }
+
     /**
      * updates tabu list after a tabu move
      * @param neighbour to prohibit
@@ -78,6 +80,7 @@ public:
 
         tabuList.emplace_back(TabuListItem{tenure, neighbour.machine, ++tabuId, neighbour.startIndex, neighbour.endIndex, neighbour.sequence});
     }
+
     /**
      * calc the size of the tabu list based on job and machine count, formula by Zhang et al.
      * @param instance
@@ -94,6 +97,7 @@ public:
         std::uniform_real_distribution<> dist(0,1);
         return std::ceil(dist(rng) * (max - min) + min);
     }
+
     /**
      * reset the tabu list to initial state
      */
@@ -102,13 +106,29 @@ public:
          tabuId = 0;
      }
 
+    /**
+     * OPTIONAL: set the parameters for the tabu list management, numbers from Zhang et al.
+     * tt, d1, d2 influence the tabu tenure of each new item ~ the time a new item is forbidden
+     * Formula: tabu time for a new item := tt + random(0, t_rand_max)
+     * t_rand_max = max((item makespan - best makespan) / d1, d2)
+     * @param _tt minimum tabu tenure
+     * @param _d1 makespan factor weight
+     * @param _d2 minimum random upperbound
+     * @param _tabuListSize
+     */
+    void setTabuParams(int _tt=2, int _d1=5, int _d2=12, unsigned int _tabuListSize= 0) {
+        tt = _tt;
+        d1 = _d1;
+        d2 = _d2;
+        if (_tabuListSize != 0) tabuListSize = _tabuListSize;
+    }
 private:
     vector<TabuListItem> tabuList;
-    const unsigned int tabuListSize;
+    unsigned int tabuListSize;
     std::mt19937 rng;
     int tabuId = 0;
     // constants, see Zhang et al.
-    const int tt = 2, d1 = 5, d2 = 12;
+    int tt = 2, d1 = 5, d2 = 12;
 };
 
 

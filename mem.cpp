@@ -25,7 +25,6 @@ BMResult MemeticAlgorithm::optimize(int time_limit, int known_optimum) {
 
     currentBest = Solution{vector<vector<int>>(), INT32_MAX};
     initializeRandPopulation();
-    TabuSearch ts_algo = TabuSearch(instance);
     for (auto &p: population) {
         auto elapsed_seconds = (std::chrono::system_clock::now() - tStart);
         if (elapsed_seconds.count() < time_limit && known_optimum != currentBest.makespan) {
@@ -37,7 +36,7 @@ BMResult MemeticAlgorithm::optimize(int time_limit, int known_optimum) {
             logMakespan(currentBest.makespan);
         }
     }
-    optimizeLoop(time_limit, known_optimum, ts_algo);
+    optimizeLoop(time_limit, known_optimum);
     return BMResult{currentBest.solution, currentBest.makespan, makespanHistory};
 }
 
@@ -56,7 +55,6 @@ BMResult MemeticAlgorithm::optimizePopulation(int time_limit, vector<Solution> &
 
     currentBest = Solution{vector<vector<int>>(), INT32_MAX};
     initializeRandPopulation();
-    TabuSearch ts_algo = TabuSearch(instance);
     for (auto &p: population) {
         p = ts_algo.optimize_it(p, tabuSearchIterations);
         if (p.makespan < currentBest.makespan) {
@@ -64,7 +62,7 @@ BMResult MemeticAlgorithm::optimizePopulation(int time_limit, vector<Solution> &
             logMakespan(currentBest.makespan);
         }
     }
-    optimizeLoop(time_limit, known_optimum, ts_algo);
+    optimizeLoop(time_limit, known_optimum);
     return BMResult{currentBest.solution, currentBest.makespan, makespanHistory};
 
 }
@@ -76,7 +74,7 @@ BMResult MemeticAlgorithm::optimizePopulation(int time_limit, vector<Solution> &
  * @param known_optimum passed by optimize
  * @param ts_algo initialized tabu search instance
  */
-void MemeticAlgorithm::optimizeLoop(int time_limit, int known_optimum, TabuSearch ts_algo) {
+void MemeticAlgorithm::optimizeLoop(int time_limit, int known_optimum) {
     rng = std::mt19937(instance.getSeed());
     std::uniform_int_distribution<std::mt19937::result_type> dist(0,populationSize - 1);
 
@@ -281,7 +279,6 @@ Solution MemeticAlgorithm::optimizeIterationConstraint(int max_iterations) {
     population = vector<Solution>();
     currentBest = Solution{vector<vector<int>>(), INT32_MAX};
     initializeRandPopulation();
-    TabuSearch ts_algo = TabuSearch(instance);
     for (auto &p: population) {
         p = ts_algo.optimize_it(p, tabuSearchIterations);
         if (p.makespan < currentBest.makespan) {

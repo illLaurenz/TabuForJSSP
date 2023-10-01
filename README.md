@@ -1,14 +1,15 @@
 # TabuForJSSP
 A tabu search algorithm and a memetic algorithm for solving the job shop scheduling problem, 
 written by Laurenz, inspired by the work of Zhang et al. [1], Cheng et al. [2] and E. Balas and A. Vazacopoulos [3]. 
-### In this document:
+
+## In this README:
 - JSSP : problem description
 - About : background of the project
 - Guide : dev guide
 - References : the referenced papers
 
 ## JSSP
-###Problem definition
+### Problem definition
 The Job Shop Scheduling Problem (JSSP) is a classical NP-hard problem. Scheduling is the allocation of 
 resources to tasks (or operations) in a time based environment. The JSSP is the most well known problem 
 of the family of scheduling problems. The resources are called machines in this problem, time is expressed as 
@@ -44,7 +45,7 @@ Example schedule:
 
 ![img.png](ressources/schedule.png)
 
-###Solution representation:
+### Solution representation:
 As already mentioned: A solution assigns a starting times to each operation. So we can see a solution as a 2-dim array 
 of integers which indicate the starting time of each operation in each job. From this we can create a schedule, if we 
 have the additional information (job, machine, duration) from the instance.

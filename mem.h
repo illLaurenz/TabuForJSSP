@@ -9,9 +9,17 @@
 
 class MemeticAlgorithm {
 public:
-    // instance -> JSSPInstance. population_size = 30, tabuSearchIterations=12000 are recommended following the original paper
-    MemeticAlgorithm(JSSPInstance &instance, int population_size = 30, int tabu_search_iterations=12000) :
-            instance(instance), tabuSearchIterations(tabu_search_iterations), populationSize(population_size) {};
+    /**
+     * initialize.
+     * @param instance a valid JSSPInstance
+     * @param population_size number of solutions which are observed simultaneously
+     * @param tabu_search_iterations number of tabu search iterations executed on each new solution
+     * @param quality_score_beta weight for solution quality rating in [0,1]. Higher -> more importance to makespan
+     *                                                                        Lower -> more importance to similarity
+     */
+    explicit MemeticAlgorithm(JSSPInstance &instance, int population_size = 30, int tabu_search_iterations=12000, float quality_score_beta=0.6) :
+            instance(instance), populationSize(population_size), tabuSearchIterations(tabu_search_iterations), qualityScoreBeta(quality_score_beta),
+            ts_algo(TabuSearch(instance)) {};
 
     // mainly method for testing functionality
     Solution optimizeIterationConstraint(int max_iterations);
@@ -22,14 +30,19 @@ public:
     // optimize with a time limit in seconds, known optimum or LB for early stop and a population of staring solutions
     BMResult optimizePopulation(int time_limit, vector<Solution> &start_solutions, int known_optimum= 0);
 
+    // OPTIONAL: set tabu list parameters -> influence how long items are forbidden. See tabuList for details.
+    void setTabuListParams(int _tt=2, int _d1=5, int _d2=12, unsigned int _tabuListSize= 0) {
+        ts_algo.setTabuListParams(_tt, _d1, _d2, _tabuListSize);};
+
 private:
     JSSPInstance &instance;
+    TabuSearch ts_algo;
     // iterations of each tabu search call. 12000 following the original paper
     const int tabuSearchIterations;
     // population size. 30 following the original paper
     const int populationSize;
     // constant for quality score weighting
-    const float qualityScoreBeta = 0.6;
+    const float qualityScoreBeta;
 
     // logging intermediate makespans while running
     vector<std::tuple<double, int>> makespanHistory;
@@ -44,7 +57,7 @@ private:
     Solution currentBest;
 
     // main algorithm loop, called by both optimize and optimizePopulation
-    void optimizeLoop(int time_limit, int known_optimum, TabuSearch ts_algo);
+    void optimizeLoop(int time_limit, int known_optimum);
 
     // init the population random at the start of the memetic algo
     void initializeRandPopulation();

@@ -46,6 +46,10 @@ public:
     // standalone mode / logging on. optimize a solution for a maximum amount of seconds, regardless the time constraint
     BMResult optimize(Solution &solution, int seconds, int known_optimum=0);
 
+    // OPTIONAL: set tabu list parameters -> influence how long items are forbidden. See tabuList for details.
+    void setTabuListParams(int _tt=2, int _d1=5, int _d2=12, unsigned int _tabuListSize= 0) {
+        tabuList.setTabuParams(_tt, _d1, _d2, _tabuListSize);};
+
 private:
     // constructor fields
     JSSPInstance &instance;
