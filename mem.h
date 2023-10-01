@@ -37,9 +37,9 @@ public:
 private:
     JSSPInstance &instance;
     TabuSearch ts_algo;
-    // iterations of each tabu search call. 12000 following the original paper
+    // iterations of each tabu search call.
     const int tabuSearchIterations;
-    // population size. 30 following the original paper
+    // population size.
     const int populationSize;
     // constant for quality score weighting
     const float qualityScoreBeta;
