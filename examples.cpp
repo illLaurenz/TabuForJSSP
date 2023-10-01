@@ -1,8 +1,8 @@
 #include <iostream>
-#include "jssp.h"
-#include "ts.h"
-#include "mem.h"
 #include <chrono>
+#include "src/jssp.h"
+#include "src/ts.h"
+#include "src/mem.h"
 
 using namespace std::chrono;
 using std::cout, std::endl;

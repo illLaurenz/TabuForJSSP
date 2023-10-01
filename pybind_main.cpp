@@ -1,8 +1,8 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
-#include "jssp.h"
-#include "ts.h"
-#include "mem.h"
+#include "src/jssp.h"
+#include "src/ts.h"
+#include "src/mem.h"
 
 namespace py = pybind11;
 
@@ -39,9 +39,11 @@ PYBIND11_MODULE(metaheuristic, m) {
             .def_readwrite("makespan", &Solution::makespan);
     py::class_<TabuSearch>(m,"TabuSearch")
             .def(py::init<JSSPInstance &>())
-            .def("optimize", &TabuSearch::optimize);
+            .def("optimize", &TabuSearch::optimize)
+            .def("setTabuListParams", &TabuSearch::setTabuListParams);
     py::class_<MemeticAlgorithm>(m,"MemeticAlgorithm")
-            .def(py::init<JSSPInstance &, int, int>())
+            .def(py::init<JSSPInstance &, int, int, float>())
+            .def("optimize", &MemeticAlgorithm::optimize)
             .def("optimize", &MemeticAlgorithm::optimizePopulation)
-            .def("optimize", &MemeticAlgorithm::optimize);
+            .def("setTabuListParams", &MemeticAlgorithm::setTabuListParams);
 }

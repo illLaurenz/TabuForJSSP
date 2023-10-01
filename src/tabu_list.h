@@ -37,11 +37,11 @@ public:
      * @return true if the solution is tabu
      */
     bool isTabu(Neighbour const &neighbour) {
-        for (auto const &tabu: tabuList) {
-            if (neighbour.machine != tabu.machine) continue;
+        for (auto const &tabu_item: tabuList) {
+            if (neighbour.machine != tabu_item.machine) continue;
             bool isTabu = true;
-            for (auto i = tabu.start_index; i <= tabu.end_index; i++) {
-                if (neighbour.sequence[i] != tabu.sequence[i]) {
+            for (auto i = tabu_item.start_index; i <= tabu_item.end_index; i++) {
+                if (neighbour.sequence[i] != tabu_item.sequence[i]) {
                     isTabu = false;
                 }
             }
