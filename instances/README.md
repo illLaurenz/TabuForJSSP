@@ -1,30 +1,33 @@
-## Instances
+# Instances
+I do not claim ownership for any of the instances in this project.
 
-The Instances 
-- abz_instances
-- dmu_instances
-- ft_instances
-- la_instances
-- orb_instances
-- swv_instances
-- ta_instances
-- yn_instances
+## In this README:
+- Sources: where to get instances
+- Instances structure: description
+- References: links and references
 
-are from the OR-Library. I downloaded them at http://jobshop.jjvh.nl/explanation.php (18.02.2023) which corresponds to the paper "The Current state of bounds on benchmark instances of the job-shop scheduling problem" by Jelke J. van Hoorn. They can also be found (unformatted) in the famous OR-Library (http://people.brunel.ac.uk/~mastjjb/jeb/orlib/jobshopinfo.html) by J E Beasley.
+## Sources
+These and additional instances can be downloaded at [1] from the OR-Library by JE Beasly [2]. Jelke J van Hoorn did a 
+comprehensive study on the bounds of many instances [3].
 
-They come in two formats. The one i use is the standart format which is present in each subfolder. The other format by Taillard can be found in each subfolder in Taillard_specification.
+## Instance structure
+All numbers in each row are seperated by a tab. The first number represents the number of jobs *n* and the second 
+number the number of machines *m*. Each following row represents one job of the instance. The rows have to be read as 
+table of tuples. So the first number is the machine required by the operation and the second the duration. The sequence
+of the operations in their row represents their job dependency. So first operation has to be processed before the second
+and so on. So in picture:
 
-#### Standart format: 
+|        *n*         |         *m*         |                    |                     |        |
+|:------------------:|:-------------------:|:------------------:|:-------------------:|:------:|
+| Machine 1 of Job 1 | Duration 1 of Job 1 | Machine 2 of Job 1 | Duration 2 of Job 1 |  ...   |
+| Machine 1 of Job 2 | Duration 1 of Job 2 | Machine 2 of Job 2 | Duration 2 of Job 2 |  ...   |
+|        ...         |         ...         |        ...         |         ...         |  ...   |
 
-In the first row the first represents the number of sequence and the second number the number of machines. Each following row represents one job. Therefor the numbers represent tuples as (machine number, time operation) so the order of the tuples represent the order in which the job has to be passed though the machines. The machine number starts at 0. The numbers are seperated by a tab symbol.
+## References
+I do not take any responsibility for the content of the websites behind the links.
 
+[1] (OR-Library) http://people.brunel.ac.uk/~mastjjb/jeb/orlib/jobshopinfo.html
 
-#### Taillard specification: 
+[2] (OR-Library) "OR-Library: distributing test problems by electronic mail", Journal of the Operational Research Society 41(11) (1990) pp1069-1072.
 
-"On the first line are two numbers, the first is the number of sequence and the second the number of machines. Following there are two matrice the first with a line for each job containing the processor times for each operation the second with the order for visiting the machines. The numbering of the machines starts at 1.
-
-For example the same instance as above would be presented as:
-
-1	3	
-6	7	5
-2	3	1" - Jelke van Hoorn, 2015. 
+[3] (Study by Jelke J van Hoorn) http://jobshop.jjvh.nl/ 

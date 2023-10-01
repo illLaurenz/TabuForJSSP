@@ -100,6 +100,8 @@ how it works. I recommend reading both before looking into the source code. More
 have references in the code to the paper which explains the part. 
 
 ### Usage
+For an example implementation see examples.cpp.
+
 #### Tabu search
 1. Initiate an instance of JSSPInstance (ji) with the path to the instance file as parameter (see jssp.cpp/.h)
 2. Initiate a TabuSearch instance (ts) with the JSSPInstance as parameter (see ts.cpp/.h)
