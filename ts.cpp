@@ -48,9 +48,10 @@ BMResult TabuSearch::optimize(Solution &solution, int seconds, int known_optimum
     tabuList.reset();
     currentSolution = solution;
     bestSolution = solution;
+    disjunctiveGraph = generateDisjunctiveGraph();
     logMakespan(bestSolution.makespan);
 
-    auto elapsed_seconds = (std::chrono::system_clock::now() - startTime);
+    auto elapsed_seconds = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now() - startTime);
     // main loop
     while (elapsed_seconds.count() < seconds && known_optimum != bestSolution.makespan) {
         auto neighbourhood = generateNeighbourhood();
@@ -59,7 +60,7 @@ BMResult TabuSearch::optimize(Solution &solution, int seconds, int known_optimum
             bestSolution = currentSolution;
             logMakespan(bestSolution.makespan);
         }
-        elapsed_seconds = (std::chrono::system_clock::now() - startTime);
+        elapsed_seconds = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now() - startTime);
     }
     return BMResult{bestSolution.solution, bestSolution.makespan, makespanHistory};
 }

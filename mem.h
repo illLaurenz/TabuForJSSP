@@ -17,7 +17,7 @@ public:
      * @param quality_score_beta weight for solution quality rating in [0,1]. Higher -> more importance to makespan
      *                                                                        Lower -> more importance to similarity
      */
-    explicit MemeticAlgorithm(JSSPInstance &instance, int population_size = 30, int tabu_search_iterations=12000, float quality_score_beta=0.6) :
+    explicit MemeticAlgorithm(JSSPInstance &instance, int population_size=30, int tabu_search_iterations=12000, float quality_score_beta=0.6) :
             instance(instance), populationSize(population_size), tabuSearchIterations(tabu_search_iterations), qualityScoreBeta(quality_score_beta),
             ts_algo(TabuSearch(instance)) {};
 
@@ -25,10 +25,10 @@ public:
     Solution optimizeIterationConstraint(int max_iterations);
 
     // optimize with a time limit in seconds, known optimum or LB for early stop (0 if unknown)
-    BMResult optimize(int time_limit, int known_optimum);
+    BMResult optimize(int time_limit, int known_optimum=0);
 
     // optimize with a time limit in seconds, known optimum or LB for early stop and a population of staring solutions
-    BMResult optimizePopulation(int time_limit, vector<Solution> &start_solutions, int known_optimum= 0);
+    BMResult optimizePopulation(int time_limit, vector<Solution> &start_solutions, int known_optimum=0);
 
     // OPTIONAL: set tabu list parameters -> influence how long items are forbidden. See tabuList for details.
     void setTabuListParams(int _tt=2, int _d1=5, int _d2=12, unsigned int _tabuListSize= 0) {

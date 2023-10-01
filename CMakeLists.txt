@@ -7,7 +7,7 @@ set(CMAKE_CXX_STANDARD 17)
 #set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O0")
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0")
 
-add_executable(test test.cpp jssp.cpp jssp.h ts.cpp ts.h mem.cpp mem.h tabu_list.h)
+add_executable(test examples.cpp jssp.cpp jssp.h ts.cpp ts.h mem.cpp mem.h tabu_list.h)
 
 target_link_libraries(test PRIVATE)
 

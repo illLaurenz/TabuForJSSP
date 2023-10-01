@@ -26,8 +26,8 @@ BMResult MemeticAlgorithm::optimize(int time_limit, int known_optimum) {
     currentBest = Solution{vector<vector<int>>(), INT32_MAX};
     initializeRandPopulation();
     for (auto &p: population) {
-        auto elapsed_seconds = (std::chrono::system_clock::now() - tStart);
-        if (elapsed_seconds.count() < time_limit && known_optimum != currentBest.makespan) {
+        auto elapsed_seconds = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now() - tStart);
+        if (elapsed_seconds.count() > time_limit || known_optimum == currentBest.makespan) {
             return BMResult{currentBest.solution, currentBest.makespan, makespanHistory};
         }
         p = ts_algo.optimize_it(p, tabuSearchIterations);
@@ -56,6 +56,10 @@ BMResult MemeticAlgorithm::optimizePopulation(int time_limit, vector<Solution> &
     currentBest = Solution{vector<vector<int>>(), INT32_MAX};
     initializeRandPopulation();
     for (auto &p: population) {
+        auto elapsed_seconds = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now() - tStart);
+        if (elapsed_seconds.count() > time_limit || known_optimum == currentBest.makespan) {
+            return BMResult{currentBest.solution, currentBest.makespan, makespanHistory};
+        }
         p = ts_algo.optimize_it(p, tabuSearchIterations);
         if (p.makespan < currentBest.makespan) {
             currentBest = p;
