@@ -3,9 +3,9 @@
 #include "src/jssp.h"
 #include "src/ts.h"
 #include "src/mem.h"
+#include "src/heuristics.h"
 
 using namespace std::chrono;
-using std::cout, std::endl;
 
 void memetic_usage(string instance_path, int time_limit) {
     auto t0 = high_resolution_clock::now();
@@ -33,7 +33,22 @@ void tabu_usage(string instance_path, int time_limit) {
 int main() {
     string instance_path = "../instances/abz_instances/abz5.txt";
     int time_limit = 60; // (seconds)
-
-    tabu_usage(instance_path, time_limit);
-    memetic_usage(instance_path, time_limit);
+    long long sum = 0;
+    for (auto i = 0; i < 100; i++) {
+        auto instance = JSSPInstance(instance_path);
+        auto solution = Heuristics::random(instance);
+        auto msp = instance.calcMakespan(solution);
+        sum += msp;
+    }
+    std::cout << sum / 100 << std::endl;
+    sum = 0;
+    for (auto i = 0; i < 100; i++) {
+        auto instance = JSSPInstance(instance_path);
+        auto solution = instance.generateRandomSolution();
+        auto msp = solution.makespan;
+        sum += msp;
+    }
+    std::cout << sum / 100 << std::endl;
+    //tabu_usage(instance_path, time_limit);
+    //memetic_usage(instance_path, time_limit);
 }

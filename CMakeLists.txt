@@ -12,7 +12,7 @@ endif()
 add_subdirectory(src)
 add_executable(example examples.cpp)
 
-target_link_libraries(example PRIVATE jssp tabu memetic)
+target_link_libraries(example PRIVATE jssp tabu memetic heuristic)
 
 #               ^^^^^^^^^ Standalone ^^^^^^^^^
 # -------------------------------------------------------
