@@ -54,7 +54,7 @@ vector<int> Machine::getSequence() {
 }
 
 
-vector<vector<int>> Heuristics::random(JSSPInstance const &instance) {
+vector<vector<int>> Heuristics::random(JSSPInstance &instance) {
     auto machines = vector<Machine>(instance.machineCount);
     auto rng = std::mt19937(instance.getSeed());
     std::uniform_int_distribution<std::mt19937::result_type> dist(0, instance.jobCount - 1);

@@ -47,7 +47,10 @@ public:
                                              machineCount(std::get<1>(readMetrics(filename))),
                                              filename(filename), seed(seed) { rng.seed(seed); };
 
-    [[nodiscard]] unsigned int getSeed() const { return seed; };
+    unsigned int getSeed() {
+        std::uniform_int_distribution<std::mt19937::result_type> dist(0, INT32_MAX);
+        return dist(rng);
+    };
 
     // reads a solution from file
     Solution readSolution(string &filename);

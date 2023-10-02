@@ -38,10 +38,10 @@ Solution TabuSearch::optimize_it(Solution &solution, long max_iterations) {
  * time constrained tabu search
  * @param solution starting solution
  * @param seconds maximum runtime, soft limit
- * @param known_optimum best known solution / lower bound for early stop when found
+ * @param lower_bound best known solution / lower bound for early stop when found
  * @return BMResult struct: solution, makespan, history (solution - time log)
  */
-BMResult TabuSearch::optimize(Solution &solution, int seconds, int known_optimum) {
+BMResult TabuSearch::optimize(Solution &solution, int seconds, int lower_bound) {
     startTime = std::chrono::system_clock::now();
     makespanHistory = vector<std::tuple<double,int>>();
 
@@ -53,7 +53,7 @@ BMResult TabuSearch::optimize(Solution &solution, int seconds, int known_optimum
 
     auto elapsed_seconds = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now() - startTime);
     // main loop
-    while (elapsed_seconds.count() < seconds && known_optimum != bestSolution.makespan) {
+    while (elapsed_seconds.count() < seconds && lower_bound != bestSolution.makespan) {
         auto neighbourhood = generateNeighbourhood();
         tsMove(neighbourhood);
         if (currentSolution.makespan < bestSolution.makespan) {

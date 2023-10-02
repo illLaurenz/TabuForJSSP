@@ -25,7 +25,7 @@ public:
 
 class Heuristics {
 public:
-    static vector<vector<int>> random(JSSPInstance const &instance);
+    static vector<vector<int>> random(JSSPInstance &instance);
 };
 
 

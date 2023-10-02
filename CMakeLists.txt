@@ -11,8 +11,10 @@ endif()
 
 add_subdirectory(src)
 add_executable(example examples.cpp)
-
 target_link_libraries(example PRIVATE jssp tabu memetic heuristic)
+
+add_executable(benchmark benchmark.cpp)
+target_link_libraries(benchmark PRIVATE jssp tabu memetic heuristic)
 
 #               ^^^^^^^^^ Standalone ^^^^^^^^^
 # -------------------------------------------------------

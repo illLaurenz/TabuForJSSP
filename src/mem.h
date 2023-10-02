@@ -3,6 +3,7 @@
 
 #include "jssp.h"
 #include "ts.h"
+#include "heuristics.h"
 #include <tuple>
 #include <chrono>
 
@@ -25,10 +26,10 @@ public:
     Solution optimizeIterationConstraint(int max_iterations);
 
     // optimize with a time limit in seconds, known optimum or LB for early stop (0 if unknown)
-    BMResult optimize(int time_limit, int known_optimum=0);
+    BMResult optimize(int time_limit, int lower_bound=0);
 
     // optimize with a time limit in seconds, known optimum or LB for early stop and a population of staring solutions
-    BMResult optimizePopulation(int time_limit, vector<Solution> &start_solutions, int known_optimum=0);
+    BMResult optimizePopulation(int time_limit, vector<Solution> &start_solutions, int lower_bound=0);
 
     // OPTIONAL: set tabu list parameters -> influence how long items are forbidden. See tabuList for details.
     void setTabuListParams(int _tt=2, int _d1=5, int _d2=12, unsigned int _tabuListSize= 0) {

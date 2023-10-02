@@ -15,10 +15,10 @@ void MemeticAlgorithm::logMakespan(int makespan) {
 /**
  * main function, initialize with object with an JSSPInstance, start optimization/benchmark with this function
  * @param time_limit maximum runtime - soft limit
- * @param known_optimum or lb for an early stop
+ * @param lower_bound or lb for an early stop
  * @return struct: solution, value, log
  */
-BMResult MemeticAlgorithm::optimize(int time_limit, int known_optimum) {
+BMResult MemeticAlgorithm::optimize(int time_limit, int lower_bound) {
     tStart = std::chrono::system_clock::now();
     makespanHistory = vector<std::tuple<double,int>>();
     population = vector<Solution>();
@@ -27,7 +27,7 @@ BMResult MemeticAlgorithm::optimize(int time_limit, int known_optimum) {
     initializeRandPopulation();
     for (auto &p: population) {
         auto elapsed_seconds = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now() - tStart);
-        if (elapsed_seconds.count() > time_limit || known_optimum == currentBest.makespan) {
+        if (elapsed_seconds.count() > time_limit || lower_bound == currentBest.makespan) {
             return BMResult{currentBest.solution, currentBest.makespan, makespanHistory};
         }
         p = ts_algo.optimize_it(p, tabuSearchIterations);
@@ -36,7 +36,7 @@ BMResult MemeticAlgorithm::optimize(int time_limit, int known_optimum) {
             logMakespan(currentBest.makespan);
         }
     }
-    optimizeLoop(time_limit, known_optimum);
+    optimizeLoop(time_limit, lower_bound);
     return BMResult{currentBest.solution, currentBest.makespan, makespanHistory};
 }
 
@@ -44,11 +44,11 @@ BMResult MemeticAlgorithm::optimize(int time_limit, int known_optimum) {
  * secondary main function, initialize with object with an JSSPInstance, start optimization/benchmark with this function.
  * use if you want to start with a set start solutions, else use MemeticAlgorithm::optimize
  * @param time_limit maximum runtime - soft limit
- * @param known_optimum or lb for an early stop
+ * @param lower_bound or lb for an early stop
  * @param start_solutions vector of feasible start solutions
  * @return struct: solution, value, log
  */
-BMResult MemeticAlgorithm::optimizePopulation(int time_limit, vector<Solution> &start_solutions, int known_optimum) {
+BMResult MemeticAlgorithm::optimizePopulation(int time_limit, vector<Solution> &start_solutions, int lower_bound) {
     tStart = std::chrono::system_clock::now();
     makespanHistory = vector<std::tuple<double,int>>();
     population = std::move(start_solutions);
@@ -57,7 +57,7 @@ BMResult MemeticAlgorithm::optimizePopulation(int time_limit, vector<Solution> &
     initializeRandPopulation();
     for (auto &p: population) {
         auto elapsed_seconds = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now() - tStart);
-        if (elapsed_seconds.count() > time_limit || known_optimum == currentBest.makespan) {
+        if (elapsed_seconds.count() > time_limit || lower_bound == currentBest.makespan) {
             return BMResult{currentBest.solution, currentBest.makespan, makespanHistory};
         }
         p = ts_algo.optimize_it(p, tabuSearchIterations);
@@ -66,7 +66,7 @@ BMResult MemeticAlgorithm::optimizePopulation(int time_limit, vector<Solution> &
             logMakespan(currentBest.makespan);
         }
     }
-    optimizeLoop(time_limit, known_optimum);
+    optimizeLoop(time_limit, lower_bound);
     return BMResult{currentBest.solution, currentBest.makespan, makespanHistory};
 
 }
@@ -114,7 +114,8 @@ void MemeticAlgorithm::optimizeLoop(int time_limit, int known_optimum) {
  */
 void MemeticAlgorithm::initializeRandPopulation() {
     while (population.size() < populationSize) {
-        population.emplace_back(instance.generateRandomSolution());
+        auto solution = Heuristics::random(instance);
+        population.emplace_back(Solution{solution, instance.calcMakespan(solution)});
     }
 }
 
