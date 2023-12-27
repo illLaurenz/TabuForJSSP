@@ -6,6 +6,7 @@ written by Laurenz, inspired by the work of Zhang et al. [1], Cheng et al. [2] a
 - JSSP : problem description
 - About : background of the project
 - Guide : dev guide
+- Benchmark: small-scale benchmark
 - References : the referenced papers
 
 ## JSSP
