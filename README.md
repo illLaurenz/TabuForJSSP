@@ -202,6 +202,52 @@ from the population and the next iteration starts.
    6. Remove the two worst solutions
 5. Return the best solution found
 
+## Benchmark
+
+So I benchmarked the algorithm. What did I do? 300s runtime on my laptop, build like in done in CMAKE. The instances are
+classical ones. LB is the best lower bound found in the literature. The time is the time in seconds, when the algorithm 
+found a solution with the best makespan it found in runtime.
+
+| Instance | LB |   Tabu MSP    |   Tabu time    |   Mem MSP    |  Mem time   |
+|:--------:|:-------:|:---------:|:---------:|:---------:|:--------:|
+|   abz5   |1234|1234|268.315|1234|44.3854|
+|   abz6   |943|943|0.0769613|943|0.555146|
+|   abz7   |656|667|9.5619|668|145.798|
+|   abz8   |648|673|111.418|678|155.642|
+|   abz9   |678|692|18.1446|693|178.217|
+|   ft06   |55|55|0.000803047|55|0.0781102|
+|   ft10   |930|930|81.7032|930|196.258|
+|   ft20   |1165|1195|0.319539|1172|112.275|
+|  swv01   |1407|1494|18.5313|1470|35.6901|
+|  swv02   |1475|1548|2.24155|1514|178.045|
+|  swv03   |1398|1461|29.8081|1450|230.682|
+|  swv04   |1464|1518|47.4382|1512|218.032|
+|  swv05   |1424|1483|2.2483|1499|31.9316|
+|  swv06   |1630|1722|109.119|1745|148.285|
+|  swv07   |1513|1692|20.0463|1667|158.275|
+|  swv08   |1671|1868|30.8872|1859|170.383|
+|  swv09   |1633|1700|178.509|1708|243.476|
+|  swv10   |1663|1801|62.8648|1809|282.571|
+|  swv11   |2983|3556|195.861|3631|24.8543|
+|  swv12   |2972|3337|72.5437|3535|51.4586|
+|  swv13   |3104|3887|3.09648|3673|58.9454|
+|  swv14   |2968|3614|4.19385|3581|157.065|
+|  swv15   |2885|3944|76.7826|3588|112.519|
+|  swv16   |2924|2924|0.0700159|2924|1.74175|
+|  swv17   |2794|2794|0.0129486|2794|1.62217|
+|  swv18   |2852|2853|0.20288|2852|8.98778|
+|  swv19   |2843|2843|154.038|2843|5.35126|
+|  swv20   |2823|2823|0.11272|2823|1.92905|
+
+SWV 01-15 is in my experience one of the most difficult instance sets. As you can see both algorithms are not optimal.
+in some cases Tabu is better, in others the Memetic algorithm. This can mostly be explained because Tabu can get stuck
+in a local optimum, so memetic has a more diversity in its solutions and therefore a lower chance to get stuck in a local 
+optimum. On the other hand Memetic performs "just" 12000 iterations of Tabusearch on each solution candidate and therefore 
+can find worse solutions because of lack of intensification (not doing enough local search per solution candidate).
+
+So all in all both have their shortcomings and both algorithms are neither fine-tuned nor highly optimized, but both 
+offer a good approximation in moderate time.
+
 ## References
 [1] `(Tabu search)` C. Zhang, P. Li, Z. Guan, and Y. Rao. A tabu search algorithm with a new neighborhood structure for the job shop scheduling problem. Computers & Operations
 Research, 34:3229–3242, 2007.
