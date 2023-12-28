@@ -16,10 +16,15 @@ vector<vector<Operation>> JSSPInstance::readInstance(string &filename) {
     std::ifstream file(filename);
     string line = "";
     std::getline(file, line);
-
     int split = line.find('\t');
+    if (split == string::npos) {
+        std::cout << "Wrong file format. The first line has to be '<#Jobs>\\t<#machines>\\n. See instances/README.md" << std::endl;
+        exit(1);
+    }
+
     int jobs = std::stoi(line.substr(0, split));
     int machines = std::stoi(line.substr(split + 1));
+
     instance.reserve(jobs);
     for (int i = 0; i < jobs; i++) {
         instance.emplace_back(vector<Operation>());
@@ -37,6 +42,18 @@ vector<vector<Operation>> JSSPInstance::readInstance(string &filename) {
             instance[job].emplace_back(Operation{machine, duration, job});
         }while (pos);
         ++job;
+    }
+    for (auto const &job: instance) {
+        if (job.size() != machines) {
+            std::cout << "Wrong file format. Each job has to consist of #machines operations. See instances/README.md" << std::endl;
+            exit(1);
+        }
+        for (auto m_no = 0; m_no < machines; m_no++) {
+            if (!contains_op(m_no, job)) {
+                std::cout << "Wrong file format. Each job has to contain a operation for each machine. See instances/README.md" << std::endl;
+                exit(1);
+            }
+        }
     }
     file.close();
     return instance;

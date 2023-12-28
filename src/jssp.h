@@ -82,6 +82,10 @@ private:
     void recover_soulution(vector<vector<int>> &solution, vector<int> &sol_ptr, vector<int> &job_ptr, std::mt19937 &local_rnd) const;
 
     vector<int> randJobList(int size);
+
+    inline static bool contains_op(int m_no, const vector<Operation> & job) {
+        for (auto op: job) {if (m_no == op.machine) {return true;}} return false;
+    }
 };
 
 
