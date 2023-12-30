@@ -53,10 +53,10 @@ public:
     };
 
     // reads a solution from file
-    Solution readSolution(string &filename);
+    static Solution readSolution(string const &filename);
 
-    // generates a random, valid solution
-    Solution generateRandomSolution();
+    // reads a solution from file
+    static void writeSolutionToFile(Solution const &solution, string const &filename);
 
     // calculate makespan of a solution of this instance. Will not terminate, if solution is invalid.
     int calcMakespan(vector<vector<int>> const &solution) const;
@@ -79,9 +79,7 @@ private:
     static std::tuple<int,int> readMetrics(string &filename);
 
     // random metric for calcMakespanAndFixSolution
-    void recover_soulution(vector<vector<int>> &solution, vector<int> &sol_ptr, vector<int> &job_ptr, std::mt19937 &local_rnd) const;
-
-    vector<int> randJobList(int size);
+    void recover_solution(vector<vector<int>> &solution, vector<int> &sol_ptr, vector<int> &job_ptr, std::mt19937 &local_rnd) const;
 
     inline static bool contains_op(int m_no, const vector<Operation> & job) {
         for (auto op: job) {if (m_no == op.machine) {return true;}} return false;

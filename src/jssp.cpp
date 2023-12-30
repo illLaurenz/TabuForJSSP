@@ -58,32 +58,6 @@ vector<vector<Operation>> JSSPInstance::readInstance(string &filename) {
     file.close();
     return instance;
 }
-/**
- * depricated method for reading in solutions in standard format as described in instances/README.md
- * @warning: infeasible or bad encoded solutions will cause undefined behavior
- * @param filename
- * @return parsed solution
- */
-Solution JSSPInstance::readSolution(string &filename) {
-    std::ifstream file(filename);
-    string line;
-    vector<vector<int>> solution = vector<vector<int>>();
-
-    int machine = 0;
-    while (std::getline(file, line)) {
-        solution.emplace_back(vector<int>());
-        int pos = 0;
-        do {
-            int pos2 = line.find('\t', pos + 1);
-            int job = std::stoi(line.substr(pos, pos2));
-            solution[machine].emplace_back(job);
-            pos = pos2;
-        } while(pos != -1);
-        ++machine;
-    }
-    file.close();
-    return {solution, calcMakespan(solution)};
-}
 
 /**
  * calculate the exact makespan for a solution of this instance
@@ -97,8 +71,10 @@ int JSSPInstance::calcMakespan(vector<vector<int>> const &solution) const {
     vector<int> makespan_job = vector<int>(instance.size());
     vector<int> job_ptr = vector<int>(instance.size());
 
-    int op_count = operationCount();
-    while (op_count > 0) {
+    int ops_left = operationCount();
+    long error_detection = 0;
+    while (ops_left > 0) {
+        error_detection += 1;
         for (int machine = 0; machine < solution.size(); machine++) {
             if (sol_ptr[machine] == solution[machine].size()) continue;
             int job = solution[machine][sol_ptr[machine]];
@@ -109,8 +85,13 @@ int JSSPInstance::calcMakespan(vector<vector<int>> const &solution) const {
                 makespan_machine[machine] = makespan;
                 ++sol_ptr[machine];
                 ++job_ptr[job];
-                --op_count;
+                --ops_left;
+                error_detection = 0;
             }
+        }
+        if (error_detection > ops_left) {
+            std::cout << "Error in solution detected. Terminating..." << std::endl;
+            exit(1);
         }
     }
     return *std::max_element(makespan_machine.begin(), makespan_machine.end());
@@ -157,7 +138,7 @@ int JSSPInstance::calcMakespanAndFixSolution(vector<vector<int>>& solution, unsi
             }
         }
         if (infeasibility_counter > solution.size()) {
-            recover_soulution(solution, sol_ptr, job_ptr, local_rnd);
+            recover_solution(solution, sol_ptr, job_ptr, local_rnd);
         }
     }
     return *std::max_element(makespan_machine.begin(), makespan_machine.end());
@@ -183,7 +164,7 @@ int JSSPInstance::operationCount() const{
  * @param job_ptr
  * @param local_rnd
  */
-void JSSPInstance::recover_soulution(vector<vector<int>> &solution, vector<int> &sol_ptr, vector<int> &job_ptr, std::mt19937 &local_rnd) const {
+void JSSPInstance::recover_solution(vector<vector<int>> &solution, vector<int> &sol_ptr, vector<int> &job_ptr, std::mt19937 &local_rnd) const {
     vector<int> open_jobs = vector<int>();
     for (int i = 0; i < job_ptr.size(); i++) {
         if (job_ptr[i] < instance[i].size()) {
@@ -210,6 +191,10 @@ std::tuple<int, int> JSSPInstance::readMetrics(string &filename) {
     std::getline(file, line);
 
     int split = line.find('\t');
+    if (split == string::npos) {
+        std::cout << "Wrong file format. The first line has to be '<#Jobs>\\t<#machines>\\n. See instances/README.md" << std::endl;
+        exit(1);
+    }
     int jobs = std::stoi(line.substr(0, split));
     int machines = std::stoi(line.substr(split + 1));
 
@@ -219,30 +204,56 @@ std::tuple<int, int> JSSPInstance::readMetrics(string &filename) {
 }
 
 /**
- * randomly distributes the jobs over a machine
- * @param size
- * @return a random machine sequence / job list
+ * method for writing solutions to file
+ * @warning: infeasible or bad encoded solutions will cause undefined behavior
+ * @param filename
+ * @return parsed solution
  */
-vector<int> JSSPInstance::randJobList(int size) {
-    vector<int> joblist = vector<int>();
-    for (int i = 0; i < size; i++) joblist.emplace_back(i);
-
-    std::shuffle(joblist.begin(), joblist.end(), rng);
-
-    return joblist;
+void JSSPInstance::writeSolutionToFile(Solution const &solution, string const &filename) {
+    std::ofstream file(filename);
+    string line;
+    file << std::to_string(solution.makespan) << "\n";
+    for (auto const &machine: solution.solution) {
+        line = "";
+        for (int j_no: machine) {
+            line += std::to_string(j_no) + "\t";
+        }
+        line += "\n";
+        file << line;
+    }
+    file.close();
 }
 
 /**
- * generates a random solution, not (semi-) active
- * @return a random solution
+ * method for reading in solutions in format as provided by JSSPInstance::writeSolutionToFile
+ * @warning: infeasible or bad encoded solutions will cause undefined behavior
+ * @param filename
+ * @return parsed solution
  */
-Solution JSSPInstance::generateRandomSolution() {
+Solution JSSPInstance::readSolution(string const &filename) {
+    std::ifstream file(filename);
+    string line;
+    vector<vector<int>> solution = vector<vector<int>>();
 
-    auto solution = vector<vector<int>>();
-    for (int m = 0; m < machineCount; m++) {
-        solution.emplace_back(randJobList(jobCount));
+    std::getline(file, line);
+    if (line.empty()) {
+        std::cout << "File not found or bad format." << std::endl;
     }
-    auto makespan = calcMakespanAndFixSolution(solution);
+    int makespan = std::stoi(line);
 
+    int machine = 0;
+    while (std::getline(file, line)) {
+        solution.emplace_back(vector<int>());
+        int pos = 0;
+        int pos2 = line.find('\t', pos + 1);;
+        do {
+            int job = std::stoi(line.substr(pos, pos2));
+            solution[machine].emplace_back(job);
+            pos = pos2;
+            pos2 = line.find('\t', pos + 1);
+        } while(pos2 != -1);
+        ++machine;
+    }
+    file.close();
     return {solution, makespan};
 }
