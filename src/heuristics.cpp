@@ -53,7 +53,10 @@ vector<int> Machine::getSequence() {
     return sequence;
 }
 
-
+/**
+ * creates a random active solution
+ * @return a solution (machine sequence)
+ */
 vector<vector<int>> Heuristics::random(JSSPInstance &instance) {
     auto machines = vector<Machine>(instance.machineCount);
     auto rng = std::mt19937(instance.getSeed());
@@ -61,7 +64,7 @@ vector<vector<int>> Heuristics::random(JSSPInstance &instance) {
 
     auto job_index = vector<int>();
     auto job_min_time = vector<long long>();
-    for (int i = 0; i < instance.machineCount; i++) {
+    for (int i = 0; i < instance.jobCount; i++) {
         job_index.emplace_back(0);
         job_min_time.emplace_back(0);
     }

@@ -25,6 +25,7 @@ public:
 
 class Heuristics {
 public:
+    // creates a random semi active solution
     static vector<vector<int>> random(JSSPInstance &instance);
 };
 
